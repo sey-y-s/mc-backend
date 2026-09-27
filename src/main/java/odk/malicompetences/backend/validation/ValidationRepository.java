@@ -2,7 +2,13 @@ package odk.malicompetences.backend.validation;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
-public interface ValidationRepository extends JpaRepository<Validation, UUID> {
+public interface ValidationRepository
+        extends JpaRepository<Validation, UUID> {
+
+    List<Validation> findByCitoyenCompetenceId(
+            UUID citoyenCompetenceId
+    );
 }

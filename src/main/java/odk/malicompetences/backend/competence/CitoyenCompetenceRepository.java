@@ -2,8 +2,16 @@ package odk.malicompetences.backend.competence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface CitoyenCompetenceRepository
         extends JpaRepository<CitoyenCompetence, UUID> {
+
+    List<CitoyenCompetence> findByCitoyenId(UUID citoyenId);
+
+    boolean existsByCitoyenIdAndCompetenceId(
+            UUID citoyenId,
+            UUID competenceId
+    );
 }
