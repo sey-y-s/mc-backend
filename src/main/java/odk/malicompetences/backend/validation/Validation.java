@@ -1,0 +1,53 @@
+package odk.malicompetences.backend.validation;
+
+import jakarta.persistence.*;
+
+import odk.malicompetences.backend.centre.Centre;
+import odk.malicompetences.backend.competence.CitoyenCompetence;
+import odk.malicompetences.backend.preuve.Preuve;
+import odk.malicompetences.backend.utilisateur.Utilisateur;
+
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Entity
+@Table(name = "validation")
+public class Validation {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "citoyen_competence_id", nullable = false)
+    private CitoyenCompetence citoyenCompetence;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "preuve_id")
+    private Preuve preuve;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "validee_par_id", nullable = false)
+    private Utilisateur valideePar;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "centre_id")
+    private Centre centre;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 40)
+    private TypeValidation type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private StatutValidation statut;
+
+    @Column(name = "date_validation")
+    private LocalDate dateValidation;
+
+    @Column(columnDefinition = "TEXT")
+    private String commentaire;
+
+    @Column(name = "date_expiration")
+    private LocalDate dateExpiration;
+}

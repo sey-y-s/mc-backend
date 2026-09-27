@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: malicompetences-backend
+
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
