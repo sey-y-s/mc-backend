@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/malicompetences}
+    url: jdbc:mysql://localhost:3306/malicompetences
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
