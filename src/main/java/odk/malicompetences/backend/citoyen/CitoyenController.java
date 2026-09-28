@@ -1,12 +1,14 @@
 package odk.malicompetences.backend.citoyen;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/citoyens")
+@RequestMapping("/api/v1/citoyens")
 public class CitoyenController {
 
     private final CitoyenService citoyenService;
@@ -19,7 +21,7 @@ public class CitoyenController {
     @ResponseStatus(HttpStatus.CREATED)
     public CitoyenResponse creer(
             @PathVariable UUID utilisateurId,
-            @RequestBody CitoyenRequest request
+            @Valid @RequestBody CitoyenRequest request
     ) {
         return citoyenService.creer(utilisateurId, request);
     }
@@ -29,5 +31,13 @@ public class CitoyenController {
             @PathVariable UUID id
     ) {
         return citoyenService.trouverParId(id);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CitoyenResponse> modifier(
+            @PathVariable UUID id,
+            @Valid @RequestBody CitoyenRequest request) {
+
+        return ResponseEntity.ok(citoyenService.modifier(id, request));
     }
 }

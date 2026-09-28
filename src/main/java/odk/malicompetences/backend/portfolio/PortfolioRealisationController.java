@@ -9,41 +9,57 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/portfolios")
+@RequestMapping("/api/v1/citoyens/{citoyenId}/portfolio")
 public class PortfolioRealisationController {
 
-    private final PortfolioRealisationService portfolioService;
+    private final PortfolioRealisationService service;
 
-    public PortfolioRealisationController(PortfolioRealisationService portfolioService) {
-        this.portfolioService = portfolioService;
+    public PortfolioRealisationController(
+            PortfolioRealisationService service
+    ) {
+        this.service = service;
     }
 
     @PostMapping
-    public ResponseEntity<PortfolioRealisationResponse> creer(@Valid @RequestBody PortfolioRealisationRequest request) {
-        return new ResponseEntity<>(portfolioService.creerPortfolio(request), HttpStatus.CREATED);
+    @ResponseStatus(HttpStatus.CREATED)
+    public PortfolioRealisationResponse ajouter(
+            @PathVariable UUID citoyenId,
+            @RequestBody PortfolioRealisationRequest request
+    ) {
+        return service.ajouter(citoyenId, request);
+    }
+
+    @GetMapping
+    public List<PortfolioRealisationResponse> trouverParCitoyen(
+            @PathVariable UUID citoyenId
+    ) {
+        return service.trouverParCitoyen(citoyenId);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PortfolioRealisationResponse> trouverParId(@PathVariable UUID id) {
-        return ResponseEntity.ok(portfolioService.trouverParId(id));
-    }
+    public ResponseEntity<PortfolioRealisationResponse> getById(
+            @PathVariable UUID id) {
 
-    @GetMapping("/citoyen/{citoyenId}")
-    public ResponseEntity<List<PortfolioRealisationResponse>> listerParCitoyen(@PathVariable UUID citoyenId) {
-        return ResponseEntity.ok(portfolioService.listerParCitoyen(citoyenId));
+        return ResponseEntity.ok(
+                service.getById(id)
+        );
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<PortfolioRealisationResponse> modifier(
             @PathVariable UUID id,
-            @Valid @RequestBody PortfolioRealisationRequest request
-    ) {
-        return ResponseEntity.ok(portfolioService.modifierPortfolio(id, request));
+            @Valid @RequestBody PortfolioRealisationRequest request) {
+
+        return ResponseEntity.ok(
+                service.modifier(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimer(@PathVariable UUID id) {
-        portfolioService.supprimerPortfolio(id);
+    public ResponseEntity<Void> supprimer(
+            @PathVariable UUID id) {
+
+        service.supprimer(id);
         return ResponseEntity.noContent().build();
     }
 }

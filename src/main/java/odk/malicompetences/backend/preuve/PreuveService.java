@@ -1,5 +1,6 @@
 package odk.malicompetences.backend.preuve;
 
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
 import odk.malicompetences.backend.competence.CitoyenCompetenceRepository;
 import org.springframework.stereotype.Service;
@@ -65,5 +66,36 @@ public class PreuveService {
             throw new RuntimeException("Preuve non trouvée avec l'id : " + id);
         }
         preuveRepository.deleteById(id);
+    }
+
+    public PreuveResponse getById(UUID id) {
+        Preuve preuve = preuveRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Preuve introuvable"));
+
+        return mapper.toResponse(preuve);
+    }
+
+    public PreuveResponse modifier(UUID id, PreuveRequest request) {
+        Preuve preuve = preuveRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Preuve introuvable"));
+
+        preuve.setType(request.type());
+        preuve.setTitre(request.titre());
+        preuve.setDescription(request.description());
+        preuve.setFichierUrl(request.fichierUrl());
+
+        return mapper.toResponse(
+                preuveRepository.save(preuve)
+        );
+    }
+
+    public void supprimer(UUID id) {
+        Preuve preuve = preuveRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Preuve introuvable"));
+
+        preuveRepository.delete(preuve);
     }
 }

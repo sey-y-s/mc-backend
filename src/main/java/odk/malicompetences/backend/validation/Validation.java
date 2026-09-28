@@ -3,17 +3,20 @@ package odk.malicompetences.backend.validation;
 import jakarta.persistence.*;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import odk.malicompetences.backend.centre.Centre;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
 import odk.malicompetences.backend.preuve.Preuve;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Data
 @Table(name = "validation")
+@NoArgsConstructor
 public class Validation {
 
     @Id
@@ -45,7 +48,7 @@ public class Validation {
     private StatutValidation statut;
 
     @Column(name = "date_validation")
-    private LocalDate dateValidation;
+    private LocalDateTime dateValidation;
 
     @Column(columnDefinition = "TEXT")
     private String commentaire;

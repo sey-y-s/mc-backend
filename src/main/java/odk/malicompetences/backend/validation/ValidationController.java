@@ -1,51 +1,67 @@
 package odk.malicompetences.backend.validation;
 
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/validations")
+@RequestMapping(
+        "/api/v1/citoyen-competences/{citoyenCompetenceId}/validations"
+)
 public class ValidationController {
 
-    private final ValidationService service;
+    private final ValidationService validationService;
 
-    public ValidationController(ValidationService service) {
-        this.service = service;
+    public ValidationController(
+            ValidationService validationService
+    ) {
+        this.validationService = validationService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ValidationResponse creer(@Valid @RequestBody ValidationRequest request) {
-        return service.creerValidation(request);
+    public ValidationResponse creer(
+            @PathVariable UUID citoyenCompetenceId,
+            @RequestBody ValidationRequest request
+    ) {
+        return validationService.creer(
+                citoyenCompetenceId,
+                request
+        );
     }
 
     @GetMapping
-    public List<ValidationResponse> lister() {
-        return service.listerToutes();
+    public List<ValidationResponse> trouverParCompetence(
+            @PathVariable UUID citoyenCompetenceId
+    ) {
+        return validationService.trouverParCompetence(
+                citoyenCompetenceId
+        );
     }
 
     @GetMapping("/{id}")
-    public ValidationResponse trouverParId(@PathVariable UUID id) {
-        return service.trouverParId(id);
+    public ResponseEntity<ValidationResponse> getById(
+            @PathVariable UUID id) {
+
+        return ResponseEntity.ok(
+                validationService.getById(id)
+        );
     }
 
-    @GetMapping("/citoyen-competence/{citoyenCompetenceId}")
-    public List<ValidationResponse> listerParCitoyenCompetence(@PathVariable UUID citoyenCompetenceId) {
-        return service.listerParCitoyenCompetence(citoyenCompetenceId);
-    }
+    @PatchMapping("/{id}/statut")
+    public ResponseEntity<ValidationResponse> modifierStatut(
+            @PathVariable UUID id,
+            @RequestBody ValidationStatutRequest request) {
 
-    @PutMapping("/{id}")
-    public ValidationResponse modifier(@PathVariable UUID id, @Valid @RequestBody ValidationRequest request) {
-        return service.modifierValidation(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void supprimer(@PathVariable UUID id) {
-        service.supprimerValidation(id);
+        return ResponseEntity.ok(
+                validationService.modifierStatut(
+                        id,
+                        request.statut(),
+                        request.commentaire()
+                )
+        );
     }
 }
