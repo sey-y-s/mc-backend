@@ -2,6 +2,9 @@ package odk.malicompetences.backend.preuve;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
 import odk.malicompetences.backend.validation.Validation;
 
@@ -12,6 +15,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "preuve")
+
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class Preuve {
 
     @Id

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/competences")
+@RequestMapping("/api/v1/competences")
 public class CompetenceController {
 
     private final CompetenceService competenceService;

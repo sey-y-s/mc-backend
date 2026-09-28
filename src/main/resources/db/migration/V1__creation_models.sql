@@ -48,7 +48,6 @@ CREATE TABLE centre (
                         CONSTRAINT pk_centre PRIMARY KEY (id)
 );
 
-
 CREATE TABLE region (
                         id CHAR(36) NOT NULL,
                         nom VARCHAR(100) NOT NULL,
@@ -146,23 +145,6 @@ CREATE TABLE experience (
                                     REFERENCES citoyen(id)
 );
 
-CREATE TABLE experience (
-                            id CHAR(36) NOT NULL,
-                            citoyen_id CHAR(36) NOT NULL,
-                            titre VARCHAR(200) NOT NULL,
-                            description TEXT,
-                            entreprise VARCHAR(200),
-                            date_debut DATE NOT NULL,
-                            date_fin DATE,
-                            en_cours BOOLEAN NOT NULL DEFAULT FALSE,
-
-                            CONSTRAINT pk_experience PRIMARY KEY (id),
-
-                            CONSTRAINT fk_experience_citoyen
-                                FOREIGN KEY (citoyen_id)
-                                    REFERENCES citoyen(id)
-);
-
 CREATE TABLE experience_competence (
                                        experience_id CHAR(36) NOT NULL,
                                        citoyen_competence_id CHAR(36) NOT NULL,
@@ -179,37 +161,33 @@ CREATE TABLE experience_competence (
                                                REFERENCES citoyen_competence(id)
 );
 
-CREATE TABLE experience (
-                            id CHAR(36) NOT NULL,
-                            citoyen_id CHAR(36) NOT NULL,
-                            titre VARCHAR(200) NOT NULL,
-                            description TEXT,
-                            entreprise VARCHAR(200),
-                            date_debut DATE NOT NULL,
-                            date_fin DATE,
-                            en_cours BOOLEAN NOT NULL DEFAULT FALSE,
+CREATE TABLE portfolio_realisation (
+    id CHAR(36) NOT NULL,
+    citoyen_id CHAR(36) NOT NULL,
+    titre VARCHAR(200) NOT NULL,
+    description TEXT,
+    date_realisation DATE,
+    lien_url VARCHAR(500),
 
-                            CONSTRAINT pk_experience PRIMARY KEY (id),
+    CONSTRAINT pk_portfolio_realisation PRIMARY KEY (id),
 
-                            CONSTRAINT fk_experience_citoyen
-                                FOREIGN KEY (citoyen_id)
-                                    REFERENCES citoyen(id)
+    CONSTRAINT fk_portfolio_realisation_citoyen
+        FOREIGN KEY (citoyen_id)
+        REFERENCES citoyen(id)
 );
 
-CREATE TABLE experience_competence (
-                                       experience_id CHAR(36) NOT NULL,
-                                       citoyen_competence_id CHAR(36) NOT NULL,
+CREATE TABLE media_realisation (
+    id CHAR(36) NOT NULL,
+    portfolio_realisation_id CHAR(36) NOT NULL,
+    type VARCHAR(30) NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    nom_fichier VARCHAR(255),
 
-                                       CONSTRAINT pk_experience_competence
-                                           PRIMARY KEY (experience_id, citoyen_competence_id),
+    CONSTRAINT pk_media_realisation PRIMARY KEY (id),
 
-                                       CONSTRAINT fk_experience_competence_experience
-                                           FOREIGN KEY (experience_id)
-                                               REFERENCES experience(id),
-
-                                       CONSTRAINT fk_experience_competence_citoyen_competence
-                                           FOREIGN KEY (citoyen_competence_id)
-                                               REFERENCES citoyen_competence(id)
+    CONSTRAINT fk_media_realisation_portfolio
+        FOREIGN KEY (portfolio_realisation_id)
+        REFERENCES portfolio_realisation(id)
 );
 
 CREATE TABLE preuve (

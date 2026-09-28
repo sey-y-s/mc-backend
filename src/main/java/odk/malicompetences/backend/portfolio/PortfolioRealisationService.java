@@ -2,6 +2,7 @@ package odk.malicompetences.backend.portfolio;
 
 import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.citoyen.CitoyenRepository;
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,4 +57,45 @@ public class PortfolioRealisationService {
                 .map(mapper::toResponse)
                 .toList();
     }
+
+    public PortfolioRealisationResponse getById(UUID id) {
+        PortfolioRealisation realisation =
+                repository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Réalisation introuvable"));
+
+        return mapper.toResponse(realisation);
+    }
+
+    public PortfolioRealisationResponse modifier(
+            UUID id,
+            PortfolioRealisationRequest request) {
+
+        PortfolioRealisation realisation =
+                repository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Réalisation introuvable"));
+
+        realisation.setTitre(request.titre());
+        realisation.setDescription(request.description());
+        realisation.setDateRealisation(request.dateRealisation());
+        realisation.setLienUrl(request.lienUrl());
+
+        return mapper.toResponse(
+                repository.save(realisation)
+        );
+    }
+
+    public void supprimer(UUID id) {
+        PortfolioRealisation realisation =
+                repository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Réalisation introuvable"));
+
+        repository.delete(realisation);
+    }
+
 }

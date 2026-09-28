@@ -2,6 +2,7 @@ package odk.malicompetences.backend.validation;
 
 import odk.malicompetences.backend.centre.Centre;
 import odk.malicompetences.backend.centre.CentreRepository;
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
 import odk.malicompetences.backend.competence.CitoyenCompetenceRepository;
 import odk.malicompetences.backend.preuve.Preuve;
@@ -104,4 +105,35 @@ public class ValidationService {
                 .map(mapper::toResponse)
                 .toList();
     }
+
+    public ValidationResponse getById(UUID id) {
+        Validation validation = validationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Validation introuvable"));
+
+        return mapper.toResponse(validation);
+    }
+
+    public ValidationResponse modifierStatut(
+            UUID id,
+            StatutValidation statut,
+            String commentaire) {
+
+        Validation validation = validationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Validation introuvable"));
+
+        validation.setStatut(statut);
+        validation.setCommentaire(commentaire);
+
+        if (statut == StatutValidation.APPROUVEE
+                || statut == StatutValidation.REJETEE) {
+            validation.setDateValidation(LocalDateTime.now());
+        }
+
+        return mapper.toResponse(
+                validationRepository.save(validation)
+        );
+    }
+
 }

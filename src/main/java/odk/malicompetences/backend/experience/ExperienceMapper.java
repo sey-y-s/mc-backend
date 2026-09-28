@@ -1,5 +1,6 @@
 package odk.malicompetences.backend.experience;
 
+import odk.malicompetences.backend.competence.CitoyenCompetence;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;

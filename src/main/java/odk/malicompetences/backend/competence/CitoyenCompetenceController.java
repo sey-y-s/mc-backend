@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/citoyens/{citoyenId}/competences")
+@RequestMapping("/api/v1/citoyens/{citoyenId}/competences")
 public class CitoyenCompetenceController {
 
     private final CitoyenCompetenceService service;
