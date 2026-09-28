@@ -2,6 +2,8 @@ package odk.malicompetences.backend.citoyen;
 
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
+import odk.malicompetences.backend.commun.ConflitMetierException;
+import odk.malicompetences.backend.commun.RessourceIntrouvableException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,12 +30,12 @@ public class CitoyenService {
     public CitoyenResponse creer(UUID utilisateurId, CitoyenRequest request) {
 
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new RessourceIntrouvableException(
                         "Utilisateur introuvable"
                 ));
 
         if (citoyenRepository.existsById(utilisateurId)) {
-            throw new IllegalStateException(
+            throw new ConflitMetierException(
                     "Le profil citoyen existe déjà"
             );
         }
@@ -45,7 +47,7 @@ public class CitoyenService {
         citoyen.setCodePasseport(genererCodePasseport());
         citoyen.setNom(request.nom());
         citoyen.setPrenom(request.prenom());
-        citoyen.setSexe(Sexe.valueOf(request.sexe()));
+        citoyen.setSexe(request.sexe());
         citoyen.setPhotoUrl(request.photoUrl());
         citoyen.setDisponibilite(
                 request.disponibilite() != null
@@ -61,7 +63,7 @@ public class CitoyenService {
     @Transactional(readOnly = true)
     public CitoyenResponse trouverParId(UUID id) {
         Citoyen citoyen = citoyenRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new RessourceIntrouvableException(
                         "Citoyen introuvable"
                 ));
 

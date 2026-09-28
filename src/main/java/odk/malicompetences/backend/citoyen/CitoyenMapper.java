@@ -11,7 +11,7 @@ public class CitoyenMapper {
                 citoyen.getCodePasseport(),
                 citoyen.getNom(),
                 citoyen.getPrenom(),
-                citoyen.getSexe().name(),
+                citoyen.getSexe() == null ? null : citoyen.getSexe().name(),
                 citoyen.getPhotoUrl(),
                 citoyen.getDisponibilite()
         );

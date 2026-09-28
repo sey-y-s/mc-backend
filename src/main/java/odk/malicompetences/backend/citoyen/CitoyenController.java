@@ -3,6 +3,7 @@ package odk.malicompetences.backend.citoyen;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.UUID;
 
 @RestController
@@ -19,7 +20,7 @@ public class CitoyenController {
     @ResponseStatus(HttpStatus.CREATED)
     public CitoyenResponse creer(
             @PathVariable UUID utilisateurId,
-            @RequestBody CitoyenRequest request
+            @Valid @RequestBody CitoyenRequest request
     ) {
         return citoyenService.creer(utilisateurId, request);
     }
