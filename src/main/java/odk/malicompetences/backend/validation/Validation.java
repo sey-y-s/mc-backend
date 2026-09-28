@@ -8,7 +8,6 @@ import odk.malicompetences.backend.preuve.Preuve;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -44,7 +43,7 @@ public class Validation {
     private StatutValidation statut;
 
     @Column(name = "date_validation")
-    private LocalDateTime dateValidation;
+    private LocalDate dateValidation;
 
     @Column(columnDefinition = "TEXT")
     private String commentaire;
