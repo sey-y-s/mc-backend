@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
 
-public interface BesoinCompetenceRepository extends JpaRepository<BesoinCompetence, UUID> {
+public interface BesoinComptenceRepository extends JpaRepository<BesoinCompetence, UUID> {
 }
