@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Référentiel Compétences", description = "Consultation du référentiel national des compétences")
+
 @RestController
 @RequestMapping("/api/v1/competences")
 public class CompetenceController {
