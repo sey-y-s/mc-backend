@@ -1,12 +1,21 @@
 package odk.malicompetences.backend.citoyen;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import odk.malicompetences.backend.common.exception.ApiError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Tag(name = "Citoyens", description = "Gestion des profils citoyens et passeports de compétences")
 @RestController
 @RequestMapping("/api/v1/citoyens")
 public class CitoyenController {
@@ -17,24 +26,90 @@ public class CitoyenController {
         this.citoyenService = citoyenService;
     }
 
+    @Operation(
+            summary = "Créer un profil citoyen",
+            description = "Crée un nouveau profil citoyen associé à un compte utilisateur existant."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Profil citoyen créé avec succès",
+                    content = @Content(schema = @Schema(implementation = CitoyenResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Données de la requête invalides",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Utilisateur introuvable",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Un profil citoyen existe déjà pour cet utilisateur",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
     @PostMapping("/utilisateur/{utilisateurId}")
     @ResponseStatus(HttpStatus.CREATED)
     public CitoyenResponse creer(
+            @Parameter(description = "Identifiant UUID du compte utilisateur", required = true)
             @PathVariable UUID utilisateurId,
             @Valid @RequestBody CitoyenRequest request
     ) {
         return citoyenService.creer(utilisateurId, request);
     }
 
+    @Operation(
+            summary = "Consulter un citoyen par ID",
+            description = "Récupère les informations détaillées du profil d'un citoyen par son identifiant unique."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profil citoyen trouvé",
+                    content = @Content(schema = @Schema(implementation = CitoyenResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Citoyen introuvable",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
     @GetMapping("/{id}")
     public CitoyenResponse trouverParId(
+            @Parameter(description = "Identifiant UUID du citoyen", required = true)
             @PathVariable UUID id
     ) {
         return citoyenService.trouverParId(id);
     }
 
+    @Operation(
+            summary = "Mettre à jour un citoyen",
+            description = "Modifie l'ensemble des informations du profil d'un citoyen."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profil citoyen mis à jour avec succès",
+                    content = @Content(schema = @Schema(implementation = CitoyenResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Données de mise à jour invalides",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Citoyen introuvable",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
     @PutMapping("/{id}")
     public ResponseEntity<CitoyenResponse> modifier(
+            @Parameter(description = "Identifiant UUID du citoyen", required = true)
             @PathVariable UUID id,
             @Valid @RequestBody CitoyenRequest request) {
 
