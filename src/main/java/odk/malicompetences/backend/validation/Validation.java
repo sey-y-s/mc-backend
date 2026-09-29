@@ -2,6 +2,7 @@ package odk.malicompetences.backend.validation;
 
 import jakarta.persistence.*;
 
+import lombok.Data;
 import odk.malicompetences.backend.centre.Centre;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
 import odk.malicompetences.backend.preuve.Preuve;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Data
 @Table(name = "validation")
 public class Validation {
 

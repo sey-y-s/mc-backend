@@ -2,12 +2,16 @@ package odk.malicompetences.backend.notification;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.Setter;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(
         name = "notification_destinataire",
         uniqueConstraints = {

@@ -1,6 +1,9 @@
 package odk.malicompetences.backend.competence;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.experience.Experience;
 
@@ -26,6 +29,9 @@ import java.util.List;
                 )
         }
 )
+@Getter
+@Setter
+@NoArgsConstructor
 public class CitoyenCompetence {
 
     @Id

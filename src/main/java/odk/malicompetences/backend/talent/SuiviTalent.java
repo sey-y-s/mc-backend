@@ -2,6 +2,7 @@ package odk.malicompetences.backend.talent;
 
 import jakarta.persistence.*;
 
+import lombok.Data;
 import odk.malicompetences.backend.besoin.Besoin;
 import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.organisation.Organisation;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Data
 @Table(
         name = "suivi_talent",
         uniqueConstraints = {
