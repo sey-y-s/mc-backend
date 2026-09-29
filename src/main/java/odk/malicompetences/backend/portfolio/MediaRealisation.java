@@ -1,11 +1,18 @@
 package odk.malicompetences.backend.portfolio;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "media_realisation")
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class MediaRealisation {
 
     @Id

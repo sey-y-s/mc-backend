@@ -1,5 +1,6 @@
 package odk.malicompetences.backend.citoyen;
 
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
 import org.springframework.stereotype.Service;
@@ -78,4 +79,21 @@ public class CitoyenService {
                         .substring(0, 6)
                         .toUpperCase();
     }
+
+    public CitoyenResponse modifier(UUID id, CitoyenRequest request) {
+        Citoyen citoyen = citoyenRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Citoyen introuvable"));
+
+        citoyen.setNom(request.nom());
+        citoyen.setPrenom(request.prenom());
+        citoyen.setSexe(Sexe.valueOf(request.sexe()));
+        citoyen.setPhotoUrl(request.photoUrl());
+        citoyen.setDisponibilite(request.disponibilite());
+
+        Citoyen citoyenModifie = citoyenRepository.save(citoyen);
+
+        return citoyenMapper.toResponse(citoyenModifie);
+    }
+
 }

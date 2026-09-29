@@ -2,6 +2,9 @@ package odk.malicompetences.backend.experience;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
 
@@ -12,6 +15,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "experience")
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class Experience {
 
     @Id

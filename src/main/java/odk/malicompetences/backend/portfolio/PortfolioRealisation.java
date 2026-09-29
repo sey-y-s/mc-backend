@@ -2,6 +2,9 @@ package odk.malicompetences.backend.portfolio;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import odk.malicompetences.backend.citoyen.Citoyen;
 
 import java.time.LocalDate;
@@ -11,6 +14,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "portfolio_realisation")
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class PortfolioRealisation {
 
     @Id
