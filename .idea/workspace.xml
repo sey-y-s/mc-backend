@@ -4,117 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4b2518c5-a112-4836-b161-d4909961055e" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinCompetenceController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinCompetenceRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinCompetenceResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinCompetenceService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/centre/CenterResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/centre/CentreRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/centre/centerService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/centre/centreController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/centre/centreMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/experience/ExperienceController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/experience/ExperienceMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/experience/ExperienceRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/experience/ExperienceResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/experience/ExperienceService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/DemandeMiseEnRelationController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/DemandeMiseEnRelationMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/DemandeMiseEnRelationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/DemandeMiseEnRelationResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/DemandeMiseEnRelationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/NotificationController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/NotificationMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/NotificationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/NotificationResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/NotificationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/CategorieOpportuniteController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/CategorieOpportuniteMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/CategorieOpportuniteRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/CategorieOpportuniteResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/CategorieOpportuniteService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/OpportuniteController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/OpportuniteMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/OpportuniteRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/OpportuniteResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/OpportuniteService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/organisation/OrganisationController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/organisation/OrganisationMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/organisation/OrganisationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/organisation/OrganisationResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/organisation/OrganisationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/MediaRealisationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/MediaRealisationResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisationController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisationMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisationResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/preuve/PreuveController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/preuve/PreuveMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/preuve/PreuveRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/preuve/PreuveResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/preuve/PreuveService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/skillsGap/IndicateurSkillsGap.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/skillsGap/IndicateurSkillsGapController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/skillsGap/IndicateurSkillsGapMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/skillsGap/IndicateurSkillsGapRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/skillsGap/IndicateurSkillsGapRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/skillsGap/IndicateurSkillsGapResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/skillsGap/IndicateurSkillsGapService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/SuiviTalentController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/SuiviTalentMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/SuiviTalentRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/SuiviTalentResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/SuiviTalentService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/CommuneController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/CommuneMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/CommuneRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/CommuneResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/CommuneService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/RegionController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/RegionMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/RegionRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/RegionResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/territoire/RegionService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/utilisateur/UtilisateurController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/utilisateur/UtilisateurMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/utilisateur/UtilisateurRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/utilisateur/UtilisateurResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/utilisateur/UtilisateurService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/validation/ValidationController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/validation/ValidationMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/validation/ValidationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/validation/ValidationResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/validation/ValidationService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/Besoin.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/Besoin.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinCompetence.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/besoin/BesoinCompetence.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/competence/CitoyenCompetence.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/competence/CitoyenCompetence.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/experience/Experience.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/experience/Experience.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/ConsultationProfil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/ConsultationProfil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/DemandeMiseEnRelation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/miseenrelation/DemandeMiseEnRelation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/Notification.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/Notification.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/NotificationDestinataire.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/notification/NotificationDestinataire.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/CategorieOpportunite.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/CategorieOpportunite.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/Opportunite.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/opportunite/Opportunite.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/MediaRealisation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/MediaRealisation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisationRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/PortfolioRealisationRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/TypeMedia.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/portfolio/TypeMedia.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/preuve/Preuve.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/preuve/Preuve.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/StatutSuiviTalent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/StatutSuiviTalent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/SuiviTalent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/talent/SuiviTalent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/utilisateur/Utilisateur.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/utilisateur/Utilisateur.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/validation/Validation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/odk/malicompetences/backend/validation/Validation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application-maria.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application-mysql.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.yaml" afterDir="false" />
-    </list>
+    <list default="true" id="4b2518c5-a112-4836-b161-d4909961055e" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -167,7 +57,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "sidi__mohamed",
+    "git-widget-placeholder": "#5 on sidi__mohamed",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
