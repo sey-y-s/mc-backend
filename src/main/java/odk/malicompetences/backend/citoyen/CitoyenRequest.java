@@ -21,6 +21,8 @@ public record CitoyenRequest(
         String photoUrl,
 
         @NotNull(message = "La disponibilité est obligatoire")
-        Disponibilite disponibilite
+        Disponibilite disponibilite,
+
+        java.util.UUID communeId
 ) {
 }

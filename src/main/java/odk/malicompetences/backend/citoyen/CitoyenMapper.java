@@ -13,7 +13,8 @@ public class CitoyenMapper {
                 citoyen.getPrenom(),
                 citoyen.getSexe().name(),
                 citoyen.getPhotoUrl(),
-                citoyen.getDisponibilite()
+                citoyen.getDisponibilite(),
+                citoyen.getCommune() != null ? citoyen.getCommune().getId() : null
         );
     }
 }
