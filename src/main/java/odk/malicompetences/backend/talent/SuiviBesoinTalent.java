@@ -2,7 +2,6 @@ package odk.malicompetences.backend.talent;
 
 import jakarta.persistence.*;
 
-import lombok.Data;
 import odk.malicompetences.backend.besoin.Besoin;
 import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.organisation.Organisation;
@@ -12,17 +11,16 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Data
 @Table(
-        name = "suivi_talent",
+        name = "suivi_besoin_talent",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_suivi_talent_besoin_citoyen",
+                        name = "uk_suivi_besoin_talent_besoin_citoyen",
                         columnNames = {"besoin_id", "citoyen_id"}
                 )
         }
 )
-public class SuiviTalent {
+public class SuiviBesoinTalent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,7 +40,7 @@ public class SuiviTalent {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private StatutSuiviTalent statut;
+    private StatutSuiviBesoinTalent statut;
 
     @Column(name = "score_correspondance", precision = 5, scale = 2)
     private BigDecimal scoreCorrespondance;
