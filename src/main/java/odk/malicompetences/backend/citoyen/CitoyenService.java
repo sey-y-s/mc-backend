@@ -3,6 +3,8 @@ package odk.malicompetences.backend.citoyen;
 import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
+import odk.malicompetences.backend.territoire.Commune;
+import odk.malicompetences.backend.territoire.CommuneRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,15 +17,18 @@ public class CitoyenService {
     private final CitoyenRepository citoyenRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CitoyenMapper citoyenMapper;
+    private final CommuneRepository communeRepository;
 
     public CitoyenService(
             CitoyenRepository citoyenRepository,
             UtilisateurRepository utilisateurRepository,
-            CitoyenMapper citoyenMapper
+            CitoyenMapper citoyenMapper,
+            CommuneRepository communeRepository
     ) {
         this.citoyenRepository = citoyenRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.citoyenMapper = citoyenMapper;
+        this.communeRepository = communeRepository;
     }
 
     public CitoyenResponse creer(UUID utilisateurId, CitoyenRequest request) {
@@ -53,6 +58,10 @@ public class CitoyenService {
                         ? request.disponibilite()
                         : Disponibilite.DISPONIBLE
         );
+        if (request.communeId() != null) {
+            citoyen.setCommune(communeRepository.findById(request.communeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")));
+        }
 
         return citoyenMapper.toResponse(
                 citoyenRepository.save(citoyen)
@@ -90,6 +99,8 @@ public class CitoyenService {
         citoyen.setSexe(Sexe.valueOf(request.sexe()));
         citoyen.setPhotoUrl(request.photoUrl());
         citoyen.setDisponibilite(request.disponibilite());
+        citoyen.setCommune(request.communeId() == null ? null : communeRepository.findById(request.communeId())
+                .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")));
 
         Citoyen citoyenModifie = citoyenRepository.save(citoyen);
 

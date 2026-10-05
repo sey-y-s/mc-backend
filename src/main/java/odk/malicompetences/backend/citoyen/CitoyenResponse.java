@@ -9,6 +9,7 @@ public record CitoyenResponse(
         String prenom,
         String sexe,
         String photoUrl,
-        Disponibilite disponibilite
+        Disponibilite disponibilite,
+        UUID communeId
 ) {
 }

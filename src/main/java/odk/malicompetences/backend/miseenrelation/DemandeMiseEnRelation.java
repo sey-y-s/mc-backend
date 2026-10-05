@@ -3,7 +3,7 @@ package odk.malicompetences.backend.miseenrelation;
 import jakarta.persistence.*;
 
 import odk.malicompetences.backend.citoyen.Citoyen;
-import odk.malicompetences.backend.talent.SuiviTalent;
+import odk.malicompetences.backend.talent.SuiviBesoinTalent;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 
 import java.time.LocalDateTime;
@@ -26,8 +26,8 @@ public class DemandeMiseEnRelation {
     private Citoyen destinataire;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "suivi_talent_id")
-    private SuiviTalent suiviTalent;
+    @JoinColumn(name = "suivi_besoin_talent_id")
+    private SuiviBesoinTalent suiviBesoinTalent;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

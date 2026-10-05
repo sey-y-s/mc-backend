@@ -7,6 +7,7 @@ import lombok.Setter;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 
 import odk.malicompetences.backend.portfolio.PortfolioRealisation;
+import odk.malicompetences.backend.territoire.Commune;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,10 @@ public class Citoyen {
 
     @Column(name = "photo_url", length = 500)
     private String photoUrl;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "commune_id")
+    private Commune commune;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

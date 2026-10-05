@@ -14,4 +14,8 @@ public interface CitoyenCompetenceRepository
             UUID citoyenId,
             UUID competenceId
     );
+
+    java.util.Optional<CitoyenCompetence> findByCitoyenIdAndCompetenceId(
+            UUID citoyenId, UUID competenceId
+    );
 }
