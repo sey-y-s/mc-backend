@@ -8,11 +8,12 @@ spring:
 server:
   port: 8080
 
-#app:
-#  security:
-#    jwt:
+app:
+  security:
+    jwt:
 #      secret: ${JWT_SECRET}
-#      expiration: 86400000
+      secret: 4f9xK2mP7vR8zL1wQ3sT6fY0hD5bN9jX2cV4kB8nM6p
+      expiration: ${JWT_EXPIRATION:86400000}
 
 springdoc:
   api-docs:
