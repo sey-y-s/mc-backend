@@ -16,5 +16,6 @@ public record PortfolioRealisationRequest(
         String description,
         LocalDate dateRealisation,
         String localisation,
-        List<MediaRealisationRequest> medias
+        List<MediaRealisationRequest> medias,
+        String lienUrl
 ) {}

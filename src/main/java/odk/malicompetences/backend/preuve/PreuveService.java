@@ -73,7 +73,7 @@ public class PreuveService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Preuve introuvable"));
 
-        return mapper.toResponse(preuve);
+        return preuveMapper.toResponse(preuve);
     }
 
     public PreuveResponse modifier(UUID id, PreuveRequest request) {
@@ -86,7 +86,7 @@ public class PreuveService {
         preuve.setDescription(request.description());
         preuve.setFichierUrl(request.fichierUrl());
 
-        return mapper.toResponse(
+        return preuveMapper.toResponse(
                 preuveRepository.save(preuve)
         );
     }

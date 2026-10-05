@@ -10,12 +10,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Component
-public class SuiviTalentMapper {
+public class SuiviBesoinTalentMapper {
 
-    public SuiviTalent toEntity(SuiviTalentRequest req, Organisation organisation, Besoin besoin, Citoyen citoyen) {
+    public SuiviBesoinTalent toEntity(SuiviBesoinTalentRequest req, Organisation organisation, Besoin besoin, Citoyen citoyen) {
         if (req == null) return null;
 
-        SuiviTalent suivi = new SuiviTalent();
+        SuiviBesoinTalent suivi = new SuiviBesoinTalent();
         suivi.setOrganisation(organisation);
         suivi.setBesoin(besoin);
         suivi.setCitoyen(citoyen);
@@ -34,7 +34,7 @@ public class SuiviTalentMapper {
         return suivi;
     }
 
-    public void updateEntity(SuiviTalentRequest req, SuiviTalent suivi) {
+    public void updateEntity(SuiviBesoinTalentRequest req, SuiviBesoinTalent suivi) {
         if (req != null && suivi != null) {
             suivi.setStatut(req.statut());
             if (req.scoreCorrespondance() != null) {
@@ -46,7 +46,7 @@ public class SuiviTalentMapper {
         }
     }
 
-    public SuiviTalentResponse toResponse(SuiviTalent s) {
+    public SuiviBesoinTalentResponse toResponse(SuiviBesoinTalent s) {
         if (s == null) return null;
 
         UUID orgId = s.getOrganisation() != null ? s.getOrganisation().getId() : null;
@@ -58,7 +58,7 @@ public class SuiviTalentMapper {
         // Conversion sécurisée de Double vers BigDecimal pour le Response
         BigDecimal scoreBd = s.getScoreCorrespondance() != null ? s.getScoreCorrespondance() : null;
 
-        return new SuiviTalentResponse(
+        return new SuiviBesoinTalentResponse(
                 s.getId(),
                 orgId,
                 besoinId,

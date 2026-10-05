@@ -6,6 +6,7 @@ import odk.malicompetences.backend.preuve.Preuve;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -84,3 +85,4 @@ public class ValidationMapper {
         );
     }
 }
+

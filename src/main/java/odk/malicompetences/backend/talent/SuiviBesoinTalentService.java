@@ -15,29 +15,29 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class SuiviTalentService {
+public class SuiviBesoinTalentService {
 
-    private final SuiviTalentRepository suiviTalentRepository;
+    private final SuiviBesoinTalentRepository SuiviBesoinTalentRepository;
     private final OrganisationRepository organisationRepository;
     private final BesoinRepository besoinRepository;
     private final CitoyenRepository citoyenRepository;
-    private final SuiviTalentMapper suiviTalentMapper;
+    private final SuiviBesoinTalentMapper SuiviBesoinTalentMapper;
 
-    public SuiviTalentService(
-            SuiviTalentRepository suiviTalentRepository,
+    public SuiviBesoinTalentService(
+            SuiviBesoinTalentRepository SuiviBesoinTalentRepository,
             OrganisationRepository organisationRepository,
             BesoinRepository besoinRepository,
             CitoyenRepository citoyenRepository,
-            SuiviTalentMapper suiviTalentMapper
+            SuiviBesoinTalentMapper SuiviBesoinTalentMapper
     ) {
-        this.suiviTalentRepository = suiviTalentRepository;
+        this.SuiviBesoinTalentRepository = SuiviBesoinTalentRepository;
         this.organisationRepository = organisationRepository;
         this.besoinRepository = besoinRepository;
         this.citoyenRepository = citoyenRepository;
-        this.suiviTalentMapper = suiviTalentMapper;
+        this.SuiviBesoinTalentMapper = SuiviBesoinTalentMapper;
     }
 
-    public SuiviTalentResponse creerSuivi(SuiviTalentRequest request) {
+    public SuiviBesoinTalentResponse creerSuivi(SuiviBesoinTalentRequest request) {
         Organisation org = organisationRepository.findById(request.organisationId())
                 .orElseThrow(() -> new RuntimeException("Organisation non trouvée"));
         Besoin besoin = besoinRepository.findById(request.besoinId())
@@ -45,37 +45,37 @@ public class SuiviTalentService {
         Citoyen citoyen = citoyenRepository.findById(request.citoyenId())
                 .orElseThrow(() -> new RuntimeException("Citoyen non trouvé"));
 
-        SuiviTalent suivi = suiviTalentMapper.toEntity(request, org, besoin, citoyen);
-        return suiviTalentMapper.toResponse(suiviTalentRepository.save(suivi));
+        SuiviBesoinTalent suivi = SuiviBesoinTalentMapper.toEntity(request, org, besoin, citoyen);
+        return SuiviBesoinTalentMapper.toResponse(SuiviBesoinTalentRepository.save(suivi));
     }
 
     @Transactional(readOnly = true)
-    public SuiviTalentResponse trouverParId(UUID id) {
-        SuiviTalent suivi = suiviTalentRepository.findById(id)
+    public SuiviBesoinTalentResponse trouverParId(UUID id) {
+        SuiviBesoinTalent suivi = SuiviBesoinTalentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé"));
-        return suiviTalentMapper.toResponse(suivi);
+        return SuiviBesoinTalentMapper.toResponse(suivi);
     }
 
     @Transactional(readOnly = true)
-    public List<SuiviTalentResponse> listerParBesoin(UUID besoinId) {
-        return suiviTalentRepository.findAll().stream()
+    public List<SuiviBesoinTalentResponse> listerParBesoin(UUID besoinId) {
+        return SuiviBesoinTalentRepository.findAll().stream()
                 .filter(s -> s.getBesoin().getId().equals(besoinId))
-                .map(suiviTalentMapper::toResponse)
+                .map(SuiviBesoinTalentMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public SuiviTalentResponse modifierSuivi(UUID id, SuiviTalentRequest request) {
-        SuiviTalent suivi = suiviTalentRepository.findById(id)
+    public SuiviBesoinTalentResponse modifierSuivi(UUID id, SuiviBesoinTalentRequest request) {
+        SuiviBesoinTalent suivi = SuiviBesoinTalentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé"));
 
-        suiviTalentMapper.updateEntity(request, suivi);
-        return suiviTalentMapper.toResponse(suiviTalentRepository.save(suivi));
+        SuiviBesoinTalentMapper.updateEntity(request, suivi);
+        return SuiviBesoinTalentMapper.toResponse(SuiviBesoinTalentRepository.save(suivi));
     }
 
     public void supprimerSuivi(UUID id) {
-        if (!suiviTalentRepository.existsById(id)) {
+        if (!SuiviBesoinTalentRepository.existsById(id)) {
             throw new RuntimeException("Suivi de talent non trouvé");
         }
-        suiviTalentRepository.deleteById(id);
+        SuiviBesoinTalentRepository.deleteById(id);
     }
 }

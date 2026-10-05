@@ -57,7 +57,7 @@ public class ExperienceController {
             @PathVariable UUID citoyenId,
             @Valid @RequestBody ExperienceRequest request
     ) {
-        return experienceService.ajouter(citoyenId, request);
+        return experienceService.creerExperience(request);
     }
 
     @Operation(
@@ -80,7 +80,7 @@ public class ExperienceController {
             @Parameter(description = "Identifiant UUID du citoyen", required = true)
             @PathVariable UUID citoyenId
     ) {
-        return experienceService.trouverParCitoyen(citoyenId);
+        return experienceService.listerParCitoyen(citoyenId);
     }
 
     @Operation(

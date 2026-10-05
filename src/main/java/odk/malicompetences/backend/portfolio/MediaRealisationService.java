@@ -39,10 +39,10 @@ public class MediaRealisationService {
 
         media.setPortfolioRealisation(realisation);
         media.setType(request.type());
-        media.setUrl(request.url());
-        media.setNomFichier(request.nomFichier());
+        media.setUrl(request.urlMedia());
+        media.setNomFichier(request.legende());
 
-        return mapper.toResponse(repository.save(media));
+        return mapper.toResponse(repository.save(media), realisationId);
     }
 
     @Transactional(readOnly = true)
@@ -52,7 +52,7 @@ public class MediaRealisationService {
         return repository
                 .findByPortfolioRealisationId(realisationId)
                 .stream()
-                .map(mapper::toResponse)
+                .map((MediaRealisation media) -> mapper.toResponse(media, media.getPortfolioRealisation().getId()))
                 .toList();
     }
 
@@ -61,7 +61,7 @@ public class MediaRealisationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Média introuvable"));
 
-        return mapper.toResponse(media);
+        return mapper.toResponse(media, media.getPortfolioRealisation().getId());
     }
 
     public MediaRealisationResponse modifier(
@@ -73,11 +73,11 @@ public class MediaRealisationService {
                         new ResourceNotFoundException("Média introuvable"));
 
         media.setType(request.type());
-        media.setUrl(request.url());
-        media.setNomFichier(request.nomFichier());
+        media.setUrl(request.urlMedia());
+        media.setNomFichier(request.legende());
 
         return mapper.toResponse(
-                repository.save(media)
+                repository.save(media), media.getPortfolioRealisation().getId()
         );
     }
 

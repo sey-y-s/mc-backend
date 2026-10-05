@@ -1,7 +1,7 @@
 package odk.malicompetences.backend.miseenrelation;
 
 import odk.malicompetences.backend.citoyen.Citoyen;
-import odk.malicompetences.backend.talent.SuiviTalent;
+import odk.malicompetences.backend.talent.SuiviBesoinTalent;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +11,7 @@ import java.util.UUID; // <--- C'est cet import qu'il manquait pour UUID
 @Component
 public class DemandeMiseEnRelationMapper {
 
-    public DemandeMiseEnRelation toEntity(DemandeMiseEnRelationRequest request, Utilisateur demandeur, Citoyen destinataire, SuiviTalent suiviTalent) {
+    public DemandeMiseEnRelation toEntity(DemandeMiseEnRelationRequest request, Utilisateur demandeur, Citoyen destinataire, SuiviBesoinTalent SuiviBesoinTalent) {
         if (request == null) {
             return null;
         }
@@ -19,7 +19,7 @@ public class DemandeMiseEnRelationMapper {
         DemandeMiseEnRelation demande = new DemandeMiseEnRelation();
         demande.setDemandeur(demandeur);
         demande.setDestinataire(destinataire);
-        demande.setSuiviTalent(suiviTalent);
+        demande.setSuiviBesoinTalent(SuiviBesoinTalent);
         demande.setStatut(request.statut());
         demande.setMessage(request.message());
         demande.setDateDemande(LocalDateTime.now());
@@ -54,7 +54,7 @@ public class DemandeMiseEnRelationMapper {
         UUID destinataireId = demande.getDestinataire() != null ? demande.getDestinataire().getId() : null;
         String destinataireNomComplet = demande.getDestinataire() != null ? demande.getDestinataire().getPrenom() + " " + demande.getDestinataire().getNom() : null;
 
-        UUID suiviId = demande.getSuiviTalent() != null ? demande.getSuiviTalent().getId() : null;
+        UUID suiviId = demande.getSuiviBesoinTalent() != null ? demande.getSuiviBesoinTalent().getId() : null;
 
         return new DemandeMiseEnRelationResponse(
                 demande.getId(),

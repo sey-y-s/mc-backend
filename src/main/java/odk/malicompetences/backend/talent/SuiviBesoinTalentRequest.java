@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record SuiviTalentRequest(
+public record SuiviBesoinTalentRequest(
         @NotNull(message = "L'ID de l'organisation est obligatoire")
         UUID organisationId,
 
@@ -15,7 +15,7 @@ public record SuiviTalentRequest(
         UUID citoyenId,
 
         @NotNull(message = "Le statut du suivi est obligatoire")
-        StatutSuiviTalent statut,
+        StatutSuiviBesoinTalent statut,
 
         BigDecimal scoreCorrespondance,
         String detailsCorrespondance,

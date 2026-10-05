@@ -67,12 +67,12 @@ public class PortfolioRealisationService {
 
     public PortfolioRealisationResponse getById(UUID id) {
         PortfolioRealisation realisation =
-                repository.findById(id)
+                portfolioRepository.findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
 
-        return mapper.toResponse(realisation);
+        return portfolioMapper.toResponse(realisation);
     }
 
     public PortfolioRealisationResponse modifier(
@@ -80,7 +80,7 @@ public class PortfolioRealisationService {
             PortfolioRealisationRequest request) {
 
         PortfolioRealisation realisation =
-                repository.findById(id)
+                portfolioRepository.findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
@@ -90,19 +90,19 @@ public class PortfolioRealisationService {
         realisation.setDateRealisation(request.dateRealisation());
         realisation.setLienUrl(request.lienUrl());
 
-        return mapper.toResponse(
-                repository.save(realisation)
+        return portfolioMapper.toResponse(
+                portfolioRepository.save(realisation)
         );
     }
 
     public void supprimer(UUID id) {
         PortfolioRealisation realisation =
-                repository.findById(id)
+                 portfolioRepository.findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
 
-        repository.delete(realisation);
+        portfolioRepository.delete(realisation);
     }
 
 }

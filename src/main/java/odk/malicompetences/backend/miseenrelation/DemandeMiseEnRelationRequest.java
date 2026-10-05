@@ -13,7 +13,7 @@ public record DemandeMiseEnRelationRequest(
         @NotNull(message = "L'ID du destinataire (citoyen) est obligatoire")
         UUID destinataireId,
 
-        UUID suiviTalentId,
+        UUID SuiviBesoinTalentId,
 
         @NotNull(message = "Le statut du contact est obligatoire")
         StatutContact statut,

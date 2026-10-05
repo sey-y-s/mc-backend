@@ -12,6 +12,7 @@ import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -134,7 +135,7 @@ public class ValidationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Validation introuvable"));
 
-        return mapper.toResponse(validation);
+        return validationMapper.toResponse(validation);
     }
 
     public ValidationResponse modifierStatut(
@@ -154,7 +155,7 @@ public class ValidationService {
             validation.setDateValidation(LocalDateTime.now());
         }
 
-        return mapper.toResponse(
+        return validationMapper.toResponse(
                 validationRepository.save(validation)
         );
     }

@@ -2,8 +2,8 @@ package odk.malicompetences.backend.miseenrelation;
 
 import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.citoyen.CitoyenRepository;
-import odk.malicompetences.backend.talent.SuiviTalent;
-import odk.malicompetences.backend.talent.SuiviTalentRepository;
+import odk.malicompetences.backend.talent.SuiviBesoinTalent;
+import odk.malicompetences.backend.talent.SuiviBesoinTalentRepository;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
 import org.springframework.stereotype.Service;
@@ -20,20 +20,20 @@ public class DemandeMiseEnRelationService {
     private final DemandeMiseEnRelationRepository demandeRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CitoyenRepository citoyenRepository;
-    private final SuiviTalentRepository suiviTalentRepository;
+    private final SuiviBesoinTalentRepository SuiviBesoinTalentRepository;
     private final DemandeMiseEnRelationMapper mapper;
 
     public DemandeMiseEnRelationService(
             DemandeMiseEnRelationRepository demandeRepository,
             UtilisateurRepository utilisateurRepository,
             CitoyenRepository citoyenRepository,
-            SuiviTalentRepository suiviTalentRepository,
+            SuiviBesoinTalentRepository SuiviBesoinTalentRepository,
             DemandeMiseEnRelationMapper mapper
     ) {
         this.demandeRepository = demandeRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.citoyenRepository = citoyenRepository;
-        this.suiviTalentRepository = suiviTalentRepository;
+        this.SuiviBesoinTalentRepository = SuiviBesoinTalentRepository;
         this.mapper = mapper;
     }
 
@@ -45,13 +45,13 @@ public class DemandeMiseEnRelationService {
         Citoyen destinataire = citoyenRepository.findById(request.destinataireId())
                 .orElseThrow(() -> new RuntimeException("Citoyen destinataire non trouvé avec l'id : " + request.destinataireId()));
 
-        SuiviTalent suiviTalent = null;
-        if (request.suiviTalentId() != null) {
-            suiviTalent = suiviTalentRepository.findById(request.suiviTalentId())
-                    .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé avec l'id : " + request.suiviTalentId()));
+        SuiviBesoinTalent SuiviBesoinTalent = null;
+        if (request.SuiviBesoinTalentId() != null) {
+            SuiviBesoinTalent = SuiviBesoinTalentRepository.findById(request.SuiviBesoinTalentId())
+                    .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé avec l'id : " + request.SuiviBesoinTalentId()));
         }
 
-        DemandeMiseEnRelation demande = mapper.toEntity(request, demandeur, destinataire, suiviTalent);
+        DemandeMiseEnRelation demande = mapper.toEntity(request, demandeur, destinataire, SuiviBesoinTalent);
         DemandeMiseEnRelation savedDemande = demandeRepository.save(demande);
         return mapper.toResponse(savedDemande);
     }

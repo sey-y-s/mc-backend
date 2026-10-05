@@ -56,11 +56,9 @@ public class ValidationController {
     @ResponseStatus(HttpStatus.CREATED)
     public ValidationResponse creer(
             @Parameter(description = "Identifiant UUID de la compétence du citoyen", required = true)
-            @PathVariable UUID citoyenCompetenceId,
             @Valid @RequestBody ValidationRequest request
     ) {
-        return validationService.creer(
-                citoyenCompetenceId,
+        return validationService.creerValidation(
                 request
         );
     }
@@ -85,7 +83,7 @@ public class ValidationController {
             @Parameter(description = "Identifiant UUID de la compétence du citoyen", required = true)
             @PathVariable UUID citoyenCompetenceId
     ) {
-        return validationService.trouverParCompetence(
+        return validationService.listerParCitoyenCompetence(
                 citoyenCompetenceId
         );
     }
