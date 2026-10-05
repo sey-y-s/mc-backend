@@ -1,8 +1,9 @@
 package odk.malicompetences.backend.besoin;
 
 import jakarta.persistence.*;
-
-import odk.malicompetences.backend.competence.Competence;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import odk.malicompetences.backend.organisation.Organisation;
 
 import java.time.LocalDate;
@@ -11,32 +12,30 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "besoin")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Besoin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organisation_id", nullable = false)
-    private Organisation organisation;
+    private Organisation organisation; // <--- Génère setOrganisation() et getOrganisation()
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false)
     private String titre;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    private StatutBesoin statut;
+    private StatutBesoin statut; // Adaptez le type d'enum si nécessaire
 
-    @Column(name = "date_debut")
     private LocalDate dateDebut;
-
-    @Column(name = "date_fin")
     private LocalDate dateFin;
 
-    @Column(name = "date_creation", nullable = false)
     private LocalDateTime dateCreation;
 }

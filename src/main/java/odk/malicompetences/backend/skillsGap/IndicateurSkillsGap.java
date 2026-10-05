@@ -1,7 +1,9 @@
 package odk.malicompetences.backend.skillsGap;
 
 import jakarta.persistence.*;
-
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import odk.malicompetences.backend.competence.Competence;
 import odk.malicompetences.backend.territoire.Region;
 
@@ -11,6 +13,9 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "indicateur_skills_gap")
+@Getter
+@Setter
+@NoArgsConstructor
 public class IndicateurSkillsGap {
 
     @Id

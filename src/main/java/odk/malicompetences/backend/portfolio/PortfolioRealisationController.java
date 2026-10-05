@@ -54,10 +54,9 @@ public class PortfolioRealisationController {
     @ResponseStatus(HttpStatus.CREATED)
     public PortfolioRealisationResponse ajouter(
             @Parameter(description = "Identifiant UUID du citoyen", required = true)
-            @PathVariable UUID citoyenId,
             @Valid @RequestBody PortfolioRealisationRequest request
     ) {
-        return service.ajouter(citoyenId, request);
+        return service.creerPortfolio(request);
     }
 
     @Operation(
@@ -80,7 +79,7 @@ public class PortfolioRealisationController {
             @Parameter(description = "Identifiant UUID du citoyen", required = true)
             @PathVariable UUID citoyenId
     ) {
-        return service.trouverParCitoyen(citoyenId);
+        return service.listerParCitoyen(citoyenId);
     }
 
     @Operation(

@@ -5,7 +5,7 @@ import java.util.UUID;
 public record MediaRealisationResponse(
         UUID id,
         TypeMedia type,
-        String url,
-        String nomFichier
-) {
-}
+        String urlMedia,
+        String legende,
+        UUID portfolioId
+) {}

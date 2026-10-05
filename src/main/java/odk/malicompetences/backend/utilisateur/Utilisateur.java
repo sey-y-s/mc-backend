@@ -1,17 +1,15 @@
 package odk.malicompetences.backend.utilisateur;
 
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "utilisateur")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 public class Utilisateur {
 
@@ -43,4 +41,3 @@ public class Utilisateur {
         dateCreation = LocalDateTime.now();
     }
 }
-

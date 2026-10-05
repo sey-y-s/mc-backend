@@ -8,64 +8,71 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class PortfolioRealisationService {
 
-    private final PortfolioRealisationRepository repository;
+    private final PortfolioRealisationRepository portfolioRepository;
     private final CitoyenRepository citoyenRepository;
-    private final PortfolioRealisationMapper mapper;
+    private final PortfolioRealisationMapper portfolioMapper;
 
     public PortfolioRealisationService(
-            PortfolioRealisationRepository repository,
+            PortfolioRealisationRepository portfolioRepository,
             CitoyenRepository citoyenRepository,
-            PortfolioRealisationMapper mapper
+            PortfolioRealisationMapper portfolioMapper
     ) {
-        this.repository = repository;
+        this.portfolioRepository = portfolioRepository;
         this.citoyenRepository = citoyenRepository;
-        this.mapper = mapper;
+        this.portfolioMapper = portfolioMapper;
     }
 
-    public PortfolioRealisationResponse ajouter(
-            UUID citoyenId,
-            PortfolioRealisationRequest request
-    ) {
-        Citoyen citoyen = citoyenRepository.findById(citoyenId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Citoyen introuvable"
-                ));
+    public PortfolioRealisationResponse creerPortfolio(PortfolioRealisationRequest request) {
+        Citoyen citoyen = citoyenRepository.findById(request.citoyenId())
+                .orElseThrow(() -> new RuntimeException("Citoyen non trouvé"));
 
-        PortfolioRealisation realisation =
-                new PortfolioRealisation();
-
-        realisation.setCitoyen(citoyen);
-        realisation.setTitre(request.titre());
-        realisation.setDescription(request.description());
-        realisation.setDateRealisation(request.dateRealisation());
-        realisation.setLienUrl(request.lienUrl());
-
-        return mapper.toResponse(repository.save(realisation));
+        PortfolioRealisation portfolio = portfolioMapper.toEntity(request, citoyen);
+        return portfolioMapper.toResponse(portfolioRepository.save(portfolio));
     }
 
     @Transactional(readOnly = true)
-    public List<PortfolioRealisationResponse> trouverParCitoyen(
-            UUID citoyenId
-    ) {
-        return repository.findByCitoyenId(citoyenId)
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+    public PortfolioRealisationResponse trouverParId(UUID id) {
+        PortfolioRealisation portfolio = portfolioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Réalisation du portfolio non trouvée"));
+        return portfolioMapper.toResponse(portfolio);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PortfolioRealisationResponse> listerParCitoyen(UUID citoyenId) {
+        return portfolioRepository.findByCitoyenId(citoyenId).stream()
+                .map(portfolioMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public PortfolioRealisationResponse modifierPortfolio(UUID id, PortfolioRealisationRequest request) {
+        PortfolioRealisation portfolio = portfolioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Réalisation du portfolio non trouvée"));
+
+        portfolioMapper.updateEntity(request, portfolio);
+        return portfolioMapper.toResponse(portfolioRepository.save(portfolio));
+    }
+
+    public void supprimerPortfolio(UUID id) {
+        if (!portfolioRepository.existsById(id)) {
+            throw new RuntimeException("Réalisation du portfolio non trouvée");
+        }
+        portfolioRepository.deleteById(id);
     }
 
     public PortfolioRealisationResponse getById(UUID id) {
         PortfolioRealisation realisation =
-                repository.findById(id)
+                portfolioRepository.findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
 
-        return mapper.toResponse(realisation);
+        return portfolioMapper.toResponse(realisation);
     }
 
     public PortfolioRealisationResponse modifier(
@@ -73,7 +80,7 @@ public class PortfolioRealisationService {
             PortfolioRealisationRequest request) {
 
         PortfolioRealisation realisation =
-                repository.findById(id)
+                portfolioRepository.findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
@@ -83,19 +90,19 @@ public class PortfolioRealisationService {
         realisation.setDateRealisation(request.dateRealisation());
         realisation.setLienUrl(request.lienUrl());
 
-        return mapper.toResponse(
-                repository.save(realisation)
+        return portfolioMapper.toResponse(
+                portfolioRepository.save(realisation)
         );
     }
 
     public void supprimer(UUID id) {
         PortfolioRealisation realisation =
-                repository.findById(id)
+                 portfolioRepository.findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
 
-        repository.delete(realisation);
+        portfolioRepository.delete(realisation);
     }
 
 }

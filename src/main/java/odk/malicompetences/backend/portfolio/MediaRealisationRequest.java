@@ -1,10 +1,14 @@
 package odk.malicompetences.backend.portfolio;
 
-import odk.malicompetences.backend.portfolio.TypeMedia;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record MediaRealisationRequest(
+        @NotNull(message = "Le type de média est obligatoire")
         TypeMedia type,
-        String url,
-        String nomFichier
-) {
-}
+
+        @NotBlank(message = "L'URL du média est obligatoire")
+        String urlMedia,
+
+        String legende
+) {}

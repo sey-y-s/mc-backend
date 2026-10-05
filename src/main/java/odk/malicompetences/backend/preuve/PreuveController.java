@@ -52,11 +52,9 @@ public class PreuveController {
     @ResponseStatus(HttpStatus.CREATED)
     public PreuveResponse ajouter(
             @Parameter(description = "Identifiant UUID de la compétence du citoyen", required = true)
-            @PathVariable UUID citoyenCompetenceId,
             @Valid @RequestBody PreuveRequest request
     ) {
-        return preuveService.ajouter(
-                citoyenCompetenceId,
+        return preuveService.creerPreuve(
                 request
         );
     }
@@ -81,7 +79,7 @@ public class PreuveController {
             @Parameter(description = "Identifiant UUID de la compétence du citoyen", required = true)
             @PathVariable UUID citoyenCompetenceId
     ) {
-        return preuveService.trouverParCompetence(
+        return preuveService.listerParCitoyenCompetence(
                 citoyenCompetenceId
         );
     }

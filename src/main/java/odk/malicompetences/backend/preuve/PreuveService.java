@@ -6,9 +6,9 @@ import odk.malicompetences.backend.competence.CitoyenCompetenceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -16,52 +16,56 @@ public class PreuveService {
 
     private final PreuveRepository preuveRepository;
     private final CitoyenCompetenceRepository citoyenCompetenceRepository;
-    private final PreuveMapper mapper;
+    private final PreuveMapper preuveMapper;
 
     public PreuveService(
             PreuveRepository preuveRepository,
             CitoyenCompetenceRepository citoyenCompetenceRepository,
-            PreuveMapper mapper
+            PreuveMapper preuveMapper
     ) {
         this.preuveRepository = preuveRepository;
         this.citoyenCompetenceRepository = citoyenCompetenceRepository;
-        this.mapper = mapper;
+        this.preuveMapper = preuveMapper;
     }
 
-    public PreuveResponse ajouter(
-            UUID citoyenCompetenceId,
-            PreuveRequest request
-    ) {
-        CitoyenCompetence citoyenCompetence =
-                citoyenCompetenceRepository.findById(
-                        citoyenCompetenceId
-                ).orElseThrow(() -> new IllegalArgumentException(
-                        "Compétence du citoyen introuvable"
-                ));
+    public PreuveResponse creerPreuve(PreuveRequest request) {
+        CitoyenCompetence citoyenCompetence = citoyenCompetenceRepository.findById(request.citoyenCompetenceId())
+                .orElseThrow(() -> new RuntimeException("Compétence du citoyen non trouvée avec l'id : " + request.citoyenCompetenceId()));
 
-        Preuve preuve = new Preuve();
-
-        preuve.setCitoyenCompetence(citoyenCompetence);
-        preuve.setType(request.type());
-        preuve.setTitre(request.titre());
-        preuve.setDescription(request.description());
-        preuve.setFichierUrl(request.fichierUrl());
-        preuve.setDateDepot(LocalDateTime.now());
-
-        return mapper.toResponse(
-                preuveRepository.save(preuve)
-        );
+        Preuve preuve = preuveMapper.toEntity(request, citoyenCompetence);
+        Preuve saved = preuveRepository.save(preuve);
+        return preuveMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
-    public List<PreuveResponse> trouverParCompetence(
-            UUID citoyenCompetenceId
-    ) {
-        return preuveRepository
-                .findByCitoyenCompetenceId(citoyenCompetenceId)
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+    public PreuveResponse trouverParId(UUID id) {
+        Preuve preuve = preuveRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Preuve non trouvée avec l'id : " + id));
+        return preuveMapper.toResponse(preuve);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PreuveResponse> listerParCitoyenCompetence(UUID citoyenCompetenceId) {
+        return preuveRepository.findAll().stream()
+                .filter(p -> p.getCitoyenCompetence().getId().equals(citoyenCompetenceId))
+                .map(preuveMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public PreuveResponse modifierPreuve(UUID id, PreuveRequest request) {
+        Preuve preuve = preuveRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Preuve non trouvée avec l'id : " + id));
+
+        preuveMapper.updateEntity(request, preuve);
+        Preuve updated = preuveRepository.save(preuve);
+        return preuveMapper.toResponse(updated);
+    }
+
+    public void supprimerPreuve(UUID id) {
+        if (!preuveRepository.existsById(id)) {
+            throw new RuntimeException("Preuve non trouvée avec l'id : " + id);
+        }
+        preuveRepository.deleteById(id);
     }
 
     public PreuveResponse getById(UUID id) {
@@ -69,7 +73,7 @@ public class PreuveService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Preuve introuvable"));
 
-        return mapper.toResponse(preuve);
+        return preuveMapper.toResponse(preuve);
     }
 
     public PreuveResponse modifier(UUID id, PreuveRequest request) {
@@ -82,7 +86,7 @@ public class PreuveService {
         preuve.setDescription(request.description());
         preuve.setFichierUrl(request.fichierUrl());
 
-        return mapper.toResponse(
+        return preuveMapper.toResponse(
                 preuveRepository.save(preuve)
         );
     }

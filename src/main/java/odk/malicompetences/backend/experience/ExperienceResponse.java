@@ -6,6 +6,8 @@ import java.util.UUID;
 
 public record ExperienceResponse(
         UUID id,
+        UUID citoyenId,
+        String citoyenNomComplet,
         String titre,
         String description,
         String entreprise,
@@ -13,5 +15,4 @@ public record ExperienceResponse(
         LocalDate dateFin,
         Boolean enCours,
         Set<UUID> citoyenCompetenceIds
-) {
-}
+) {}
