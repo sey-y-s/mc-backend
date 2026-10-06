@@ -9,9 +9,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import odk.malicompetences.backend.common.exception.ApiError;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,11 +24,14 @@ import java.util.UUID;
 public class MediaRealisationController {
 
     private final MediaRealisationService service;
+    private final PortfolioMediaStorageService mediaStorage;
 
     public MediaRealisationController(
-            MediaRealisationService service
+            MediaRealisationService service,
+            PortfolioMediaStorageService mediaStorage
     ) {
         this.service = service;
+        this.mediaStorage = mediaStorage;
     }
 
     @Operation(
@@ -58,6 +63,30 @@ public class MediaRealisationController {
             @Valid @RequestBody MediaRealisationRequest request
     ) {
         return service.ajouter(realisationId, request);
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public MediaRealisationResponse televerser(
+            @PathVariable UUID realisationId,
+            @RequestPart("fichier") MultipartFile fichier,
+            @RequestParam("type") TypeMedia type,
+            @RequestParam(value = "legende", required = false) String legende
+    ) {
+        String url = mediaStorage.store(fichier, type);
+        String nom = legende == null || legende.isBlank()
+                ? fichier.getOriginalFilename()
+                : legende.trim();
+        if (nom == null || nom.isBlank()) nom = "media";
+        nom = nom.replaceAll("[\\p{Cntrl}]", "");
+        if (nom.length() > 255) nom = nom.substring(0, 255);
+
+        try {
+            return service.ajouter(realisationId, new MediaRealisationRequest(type, url, nom));
+        } catch (RuntimeException exception) {
+            mediaStorage.delete(url);
+            throw exception;
+        }
     }
 
     @Operation(
@@ -161,7 +190,9 @@ public class MediaRealisationController {
             @Parameter(description = "Identifiant UUID du média", required = true)
             @PathVariable UUID id) {
 
+        MediaRealisationResponse media = service.getById(id);
         service.supprimer(id);
+        mediaStorage.delete(media.urlMedia());
         return ResponseEntity.noContent().build();
     }
 
