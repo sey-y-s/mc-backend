@@ -48,8 +48,7 @@ public class NotificationService {
     // Récupérer toutes les notifications d'un utilisateur
     @Transactional(readOnly = true)
     public List<NotificationResponse> recupererNotificationsParUtilisateur(UUID utilisateurId) {
-        return notificationDestinataireRepository.findAll().stream()
-                .filter(nd -> nd.getUtilisateur().getId().equals(utilisateurId))
+        return notificationDestinataireRepository.findByUtilisateurIdOrderByDateReceptionDesc(utilisateurId).stream()
                 .map(notificationMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -57,15 +56,16 @@ public class NotificationService {
     // Récupérer uniquement les notifications non lues d'un utilisateur
     @Transactional(readOnly = true)
     public List<NotificationResponse> recupererNotificationsNonLues(UUID utilisateurId) {
-        return notificationDestinataireRepository.findAll().stream()
-                .filter(nd -> nd.getUtilisateur().getId().equals(utilisateurId) && Boolean.FALSE.equals(nd.getLu()))
+        return notificationDestinataireRepository
+                .findByUtilisateurIdAndLuFalseOrderByDateReceptionDesc(utilisateurId).stream()
                 .map(notificationMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     // Marquer une notification comme lue
-    public NotificationResponse marquerCommeLue(UUID notificationDestinataireId) {
-        NotificationDestinataire nd = notificationDestinataireRepository.findById(notificationDestinataireId)
+    public NotificationResponse marquerCommeLue(UUID notificationDestinataireId, UUID utilisateurId) {
+        NotificationDestinataire nd = notificationDestinataireRepository
+                .findByIdAndUtilisateurId(notificationDestinataireId, utilisateurId)
                 .orElseThrow(() -> new RuntimeException("Notification destinataire non trouvée avec l'id : " + notificationDestinataireId));
 
         if (Boolean.FALSE.equals(nd.getLu())) {

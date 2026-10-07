@@ -48,14 +48,8 @@ public class OpportuniteMapper {
     public OpportuniteResponse toResponse(Opportunite op) {
         if (op == null) return null;
 
-        // Si CategorieOpportunite est un ENUM, remplacez getCandidatId()/getId() par le nom ou l'enum direct.
-        // Si CategorieOpportunite est une ENTITÉ avec un ID de type UUID :
-        UUID catId = (op.getCategorie() != null) ? null : null; // Adaptez selon votre modèle si c'est un UUID ou un enum
-
-        // Si c'est une entité avec un ID, utilisez :
-        // UUID catId = op.getCategorie() != null ? op.getCategorie().getId() : null;
-
-        String catNom = op.getCategorie() != null ? op.getCategorie().toString() : null;
+        UUID catId = op.getCategorie() != null ? op.getCategorie().getId() : null;
+        String catNom = op.getCategorie() != null ? op.getCategorie().getNom() : null;
 
         return new OpportuniteResponse(
                 op.getId(),
