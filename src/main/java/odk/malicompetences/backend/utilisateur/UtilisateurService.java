@@ -1,5 +1,6 @@
 package odk.malicompetences.backend.utilisateur;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,13 +14,16 @@ public class UtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final UtilisateurMapper utilisateurMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public UtilisateurService(
             UtilisateurRepository utilisateurRepository,
-            UtilisateurMapper utilisateurMapper
+            UtilisateurMapper utilisateurMapper,
+            PasswordEncoder passwordEncoder
     ) {
         this.utilisateurRepository = utilisateurRepository;
         this.utilisateurMapper = utilisateurMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UtilisateurResponse creerUtilisateur(UtilisateurRequest request) {
@@ -30,9 +34,7 @@ public class UtilisateurService {
             throw new RuntimeException("Un utilisateur avec cet email existe déjà.");
         }
 
-        // TODO : Encoder le mot de passe avec PasswordEncoder (ex: BCrypt) si Spring Security est configuré.
-        // Exemple : passwordEncoder.encode(request.password())
-        String passwordHash = request.password();
+        String passwordHash = passwordEncoder.encode(request.password());
 
         Utilisateur utilisateur = utilisateurMapper.toEntity(request, passwordHash);
         Utilisateur saved = utilisateurRepository.save(utilisateur);
