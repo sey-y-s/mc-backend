@@ -5,10 +5,17 @@ spring:
   flyway:
     enabled: true
 
+  servlet:
+    multipart:
+      max-file-size: ${MEDIA_MAX_FILE_SIZE:10MB}
+      max-request-size: ${MEDIA_MAX_REQUEST_SIZE:11MB}
+
 server:
   port: 8080
 
 app:
+  media:
+    storage-directory: ${MEDIA_STORAGE_DIRECTORY:uploads/portfolio}
   security:
     jwt:
 #      secret: ${JWT_SECRET}
