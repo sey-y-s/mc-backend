@@ -9,14 +9,12 @@ public class RegionMapper {
         if (request == null) return null;
         Region region = new Region();
         region.setNom(request.nom());
-        region.setDescription(request.description());
         return region;
     }
 
     public void updateEntity(RegionRequest request, Region region) {
         if (request != null && region != null) {
             region.setNom(request.nom());
-            region.setDescription(request.description());
         }
     }
 
@@ -24,8 +22,7 @@ public class RegionMapper {
         if (region == null) return null;
         return new RegionResponse(
                 region.getId(),
-                region.getNom(),
-                region.getDescription()
+                region.getNom()
         );
     }
 }

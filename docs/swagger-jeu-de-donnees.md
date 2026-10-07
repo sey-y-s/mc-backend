@@ -44,8 +44,7 @@ Les UUID sont générés par le serveur. Après chaque POST, copiez le champ `id
 
 ```json
 {
-  "nom": "Region Swagger 20261006",
-  "description": "Donnée de test Swagger"
+  "nom": "Region Swagger 20261006"
 }
 ```
 
@@ -54,8 +53,7 @@ Les UUID sont générés par le serveur. Après chaque POST, copiez le champ `id
 ```json
 {
   "regionId": "{{REGION_ID}}",
-  "nom": "Commune Swagger 20261006",
-  "description": "Donnée de test liée à la région Swagger"
+  "nom": "Commune Swagger 20261006"
 }
 ```
 

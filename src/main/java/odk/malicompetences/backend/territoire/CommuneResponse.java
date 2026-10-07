@@ -6,6 +6,5 @@ public record CommuneResponse(
         UUID id,
         UUID regionId,
         String regionNom,
-        String nom,
-        String description
+        String nom
 ) {}

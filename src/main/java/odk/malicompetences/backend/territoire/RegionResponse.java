@@ -4,6 +4,5 @@ import java.util.UUID;
 
 public record RegionResponse(
         UUID id,
-        String nom,
-        String description
+        String nom
 ) {}
