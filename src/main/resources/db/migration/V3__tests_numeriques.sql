@@ -6,7 +6,7 @@ CREATE TABLE test_numerique (
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT pk_test_numerique PRIMARY KEY (id),
     CONSTRAINT fk_test_numerique_competence FOREIGN KEY (competence_id) REFERENCES competence(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE question (
     id CHAR(36) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE question (
     ordre INT NOT NULL,
     CONSTRAINT pk_question PRIMARY KEY (id),
     CONSTRAINT fk_question_test FOREIGN KEY (test_id) REFERENCES test_numerique(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE proposition_reponse (
     id CHAR(36) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE proposition_reponse (
     correcte BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT pk_proposition_reponse PRIMARY KEY (id),
     CONSTRAINT fk_proposition_reponse_question FOREIGN KEY (question_id) REFERENCES question(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resultat_test (
     id CHAR(36) NOT NULL,
@@ -40,4 +40,4 @@ CREATE TABLE resultat_test (
     CONSTRAINT fk_resultat_test_citoyen FOREIGN KEY (citoyen_id) REFERENCES citoyen(id),
     CONSTRAINT fk_resultat_test_preuve FOREIGN KEY (preuve_id) REFERENCES preuve(id),
     CONSTRAINT uk_resultat_test_preuve UNIQUE (preuve_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
