@@ -28,9 +28,7 @@ import odk.malicompetences.backend.centre.Centre;
 import odk.malicompetences.backend.centre.CentreRepository;
 import odk.malicompetences.backend.competence.Competence;
 import odk.malicompetences.backend.competence.CompetenceRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,10 +114,10 @@ public class AdminController {
                 .toList();
     }
 
-    @org.springframework.web.bind.annotation.PatchMapping("/organisations/{id}/statut")
+    @PatchMapping("/organisations/{id}/statut")
     public OrganisationAdminResponse modifierStatutOrganisation(
-            @org.springframework.web.bind.annotation.PathVariable UUID id,
-            @org.springframework.web.bind.annotation.RequestBody ModifierStatutOrganisationRequest request
+            @PathVariable UUID id,
+            @RequestBody ModifierStatutOrganisationRequest request
     ) {
         if (request.statut() == null) {
             throw new IllegalArgumentException("Le statut est obligatoire.");
@@ -142,10 +140,10 @@ public class AdminController {
                 .toList();
     }
 
-    @org.springframework.web.bind.annotation.PatchMapping("/validations/{id}/statut")
+    @PatchMapping("/validations/{id}/statut")
     public ValidationResponse modifierStatutValidation(
-            @org.springframework.web.bind.annotation.PathVariable UUID id,
-            @org.springframework.web.bind.annotation.RequestBody ModifierStatutValidationRequest request
+            @PathVariable UUID id,
+            @RequestBody ModifierStatutValidationRequest request
     ) {
         if (request.statut() == null) {
             throw new IllegalArgumentException("Le statut est obligatoire.");
@@ -160,9 +158,9 @@ public class AdminController {
                 .toList();
     }
 
-    @org.springframework.web.bind.annotation.PostMapping("/tests-numeriques")
-    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.CREATED)
-    public TestAdminResponse creerTest(@Valid @org.springframework.web.bind.annotation.RequestBody TestAdminRequest request) {
+    @PostMapping("/tests-numeriques")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TestAdminResponse creerTest(@Valid @RequestBody TestAdminRequest request) {
         if (request.competenceId() == null || request.titre() == null || request.titre().isBlank()) {
             throw new IllegalArgumentException("Une compétence et un titre sont obligatoires.");
         }
@@ -175,10 +173,10 @@ public class AdminController {
         return enregistrerTest(test, request.questions());
     }
 
-    @org.springframework.web.bind.annotation.PutMapping("/tests-numeriques/{id}")
+    @PutMapping("/tests-numeriques/{id}")
     public TestAdminResponse modifierTest(
-            @org.springframework.web.bind.annotation.PathVariable UUID id,
-            @Valid @org.springframework.web.bind.annotation.RequestBody TestAdminRequest request
+            @PathVariable UUID id,
+            @Valid @RequestBody TestAdminRequest request
     ) {
         TestNumerique test = testRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Test numérique introuvable."));
@@ -196,9 +194,9 @@ public class AdminController {
         return toAdminResponse(test);
     }
 
-    @org.springframework.web.bind.annotation.DeleteMapping("/tests-numeriques/{id}")
-    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.NO_CONTENT)
-    public void archiverTest(@org.springframework.web.bind.annotation.PathVariable UUID id) {
+    @DeleteMapping("/tests-numeriques/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiverTest(@PathVariable UUID id) {
         TestNumerique test = testRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Test numérique introuvable."));
         test.setActif(false);
@@ -244,10 +242,10 @@ public class AdminController {
                 .toList();
     }
 
-    @org.springframework.web.bind.annotation.PutMapping("/users/{id}/role")
+    @PutMapping("/users/{id}/role")
     public AdminUserResponse modifierRole(
-            @org.springframework.web.bind.annotation.PathVariable UUID id,
-            @org.springframework.web.bind.annotation.RequestBody ModifierRoleRequest request
+            @PathVariable UUID id,
+            @RequestBody ModifierRoleRequest request
     ) {
         if (request.role() == null) {
             throw new IllegalArgumentException("Le rôle est obligatoire.");
