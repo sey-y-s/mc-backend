@@ -63,22 +63,58 @@ public class BesoinCompetenceService {
         Besoin besoin = besoinRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Besoin non trouvé avec l'id : " + id));
 
-        List<BesoinCompetence> competences = besoinCompetenceRepository.findAll().stream()
-                .filter(bc -> bc.getBesoin().getId().equals(id))
-                .collect(Collectors.toList());
+        List<BesoinCompetence> competences = besoinCompetenceRepository.findByBesoinId(id);
 
         return besoinMapper.toResponse(besoin, competences);
+    }
+
+    public BesoinResponse modifierBesoin(UUID id, BesoinRequest request) {
+        Besoin besoin = besoinRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Besoin non trouvé avec l'id : " + id));
+        Organisation organisation = organisationRepository.findById(request.organisationId())
+                .orElseThrow(() -> new RuntimeException("Organisation non trouvée avec l'id : " + request.organisationId()));
+
+        besoin.setOrganisation(organisation);
+        besoin.setTitre(request.titre());
+        besoin.setDescription(request.description());
+        besoin.setStatut(request.statut());
+        besoin.setDateDebut(request.dateDebut());
+        besoin.setDateFin(request.dateFin());
+        Besoin savedBesoin = besoinRepository.save(besoin);
+
+        List<BesoinCompetence> anciennesCompetences = besoinCompetenceRepository.findByBesoinId(id);
+        besoinCompetenceRepository.deleteAll(anciennesCompetences);
+
+        List<BesoinCompetence> nouvellesCompetences = request.competences() == null
+                ? List.of()
+                : request.competences().stream().map(compReq -> {
+                    Competence competence = competenceRepository.findById(compReq.competenceId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Compétence non trouvée avec l'id : " + compReq.competenceId()));
+                    return besoinMapper.toBesoinCompetenceEntity(compReq, savedBesoin, competence);
+                }).toList();
+        List<BesoinCompetence> savedCompetences = besoinCompetenceRepository.saveAll(nouvellesCompetences);
+
+        return besoinMapper.toResponse(savedBesoin, savedCompetences);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BesoinResponse> listerParOrganisation(UUID organisationId) {
+        return besoinRepository.findByOrganisationId(organisationId).stream()
+                .map(besoin -> besoinMapper.toResponse(
+                        besoin,
+                        besoinCompetenceRepository.findByBesoinId(besoin.getId())))
+                .toList();
     }
 
     // Lister tous les besoins
     @Transactional(readOnly = true)
     public List<BesoinResponse> listerTousLesBesoins() {
-        return besoinRepository.findAll().stream().map(besoin -> {
-            List<BesoinCompetence> competences = besoinCompetenceRepository.findAll().stream()
-                    .filter(bc -> bc.getBesoin().getId().equals(besoin.getId()))
-                    .collect(Collectors.toList());
-            return besoinMapper.toResponse(besoin, competences);
-        }).collect(Collectors.toList());
+        return besoinRepository.findAll().stream()
+                .map(besoin -> besoinMapper.toResponse(
+                        besoin,
+                        besoinCompetenceRepository.findByBesoinId(besoin.getId())))
+                .collect(Collectors.toList());
     }
 
     // Supprimer un besoin

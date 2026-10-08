@@ -6,4 +6,6 @@ import java.util.UUID;
 
 public interface DemandeMiseEnRelationRepository
         extends JpaRepository<DemandeMiseEnRelation, UUID> {
+    long countByDemandeurId(UUID demandeurId);
+    java.util.List<DemandeMiseEnRelation> findByDemandeurId(UUID demandeurId);
 }

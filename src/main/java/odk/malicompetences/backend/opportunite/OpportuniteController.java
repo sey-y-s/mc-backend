@@ -38,6 +38,16 @@ public class OpportuniteController {
         return service.modifierOpportunite(id, request);
     }
 
+    @PatchMapping("/{id}/publier")
+    public OpportuniteResponse publier(@PathVariable UUID id) {
+        return service.publier(id);
+    }
+
+    @PatchMapping("/{id}/archiver")
+    public OpportuniteResponse archiver(@PathVariable UUID id) {
+        return service.archiver(id);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void supprimer(@PathVariable UUID id) {

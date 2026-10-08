@@ -46,9 +46,13 @@ public class DemandeMiseEnRelationService {
                 .orElseThrow(() -> new RuntimeException("Citoyen destinataire non trouvé avec l'id : " + request.destinataireId()));
 
         SuiviBesoinTalent SuiviBesoinTalent = null;
-        if (request.SuiviBesoinTalentId() != null) {
-            SuiviBesoinTalent = SuiviBesoinTalentRepository.findById(request.SuiviBesoinTalentId())
-                    .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé avec l'id : " + request.SuiviBesoinTalentId()));
+        if (request.suiviBesoinTalentId() != null) {
+            SuiviBesoinTalent = SuiviBesoinTalentRepository.findById(request.suiviBesoinTalentId())
+                    .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé avec l'id : " + request.suiviBesoinTalentId()));
+            if (!SuiviBesoinTalent.getOrganisation().getId().equals(request.demandeurId())) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Le suivi associé n’appartient pas au demandeur.");
+            }
         }
 
         DemandeMiseEnRelation demande = mapper.toEntity(request, demandeur, destinataire, SuiviBesoinTalent);
@@ -68,6 +72,13 @@ public class DemandeMiseEnRelationService {
     @Transactional(readOnly = true)
     public List<DemandeMiseEnRelationResponse> listerToutes() {
         return demandeRepository.findAll().stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DemandeMiseEnRelationResponse> listerParDemandeur(UUID demandeurId) {
+        return demandeRepository.findByDemandeurId(demandeurId).stream()
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
     }
