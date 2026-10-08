@@ -164,6 +164,7 @@ public class AdminController {
         if (request.competenceId() == null || request.titre() == null || request.titre().isBlank()) {
             throw new IllegalArgumentException("Une compétence et un titre sont obligatoires.");
         }
+        validerQuestionsQcm(request.questions());
         TestNumerique test = new TestNumerique();
         test.setCompetence(competenceRepository.findById(request.competenceId())
                 .orElseThrow(() -> new IllegalArgumentException("Compétence introuvable.")));
@@ -180,6 +181,9 @@ public class AdminController {
     ) {
         TestNumerique test = testRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Test numérique introuvable."));
+        if (request.questions() != null) {
+            validerQuestionsQcm(request.questions());
+        }
         if (request.competenceId() != null) {
             test.setCompetence(competenceRepository.findById(request.competenceId())
                     .orElseThrow(() -> new IllegalArgumentException("Compétence introuvable.")));
@@ -277,7 +281,8 @@ public class AdminController {
     public record ValidationAdminResponse(UUID id, String type, String libelle, String statut) {}
 
     public record TestAdminResponse(
-            UUID id, String titre, String description, String statut, List<QuestionAdminResponse> questions
+            UUID id, UUID competenceId, String titre, String description, String statut,
+            List<QuestionAdminResponse> questions
     ) {}
 
     public record QuestionAdminResponse(
@@ -354,13 +359,34 @@ public class AdminController {
         }
     }
 
+    private void validerQuestionsQcm(List<QuestionAdminRequest> questions) {
+        if (questions == null || questions.isEmpty()) {
+            throw new IllegalArgumentException("Ajoutez au moins une question à choix multiples.");
+        }
+        for (QuestionAdminRequest question : questions) {
+            if (question == null || question.type() != TypeQuestion.CHOIX_MULTIPLE) {
+                throw new IllegalArgumentException("Les tests numériques acceptent uniquement les QCM à réponses multiples.");
+            }
+            if (question.propositions() == null || question.propositions().size() < 2) {
+                throw new IllegalArgumentException("Chaque question doit proposer au moins deux réponses.");
+            }
+            if (question.propositions().stream().anyMatch(
+                    proposition -> proposition == null || proposition.texte() == null || proposition.texte().isBlank())) {
+                throw new IllegalArgumentException("Les propositions ne peuvent pas être vides.");
+            }
+            if (question.propositions().stream().noneMatch(PropositionAdminRequest::correcte)) {
+                throw new IllegalArgumentException("Chaque question doit avoir au moins une réponse correcte.");
+            }
+        }
+    }
+
     private TestAdminResponse toAdminResponse(TestNumerique test) {
         List<QuestionAdminResponse> questions = questionRepository
                 .findByTestIdOrderByOrdreAsc(test.getId()).stream()
                 .map(question -> new QuestionAdminResponse(
                         question.getId(),
                         question.getTexte(),
-                        question.getType() == TypeQuestion.TEXTE_LIBRE ? "OUVERT" : "QCM",
+                        question.getType().name(),
                         question.getOrdre(),
                         propositionRepository.findByQuestionId(question.getId()).stream()
                                 .map(proposition -> new PropositionAdminResponse(
@@ -370,7 +396,7 @@ public class AdminController {
                                 .toList()))
                 .toList();
         return new TestAdminResponse(
-                test.getId(), test.getTitre(), test.getDescription(),
+                test.getId(), test.getCompetence().getId(), test.getTitre(), test.getDescription(),
                 test.isActif() ? "PUBLIQUE" : "BROUILLON", questions);
     }
 
