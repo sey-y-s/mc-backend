@@ -2,7 +2,7 @@ package odk.malicompetences.backend.territoire;
 
 import org.springframework.stereotype.Component;
 
-import java.util.UUID; // <--- C'est cet import qu'il manquait pour UUID
+import java.util.UUID;
 
 @Component
 public class CommuneMapper {

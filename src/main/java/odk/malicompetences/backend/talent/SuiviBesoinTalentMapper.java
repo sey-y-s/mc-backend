@@ -21,8 +21,7 @@ public class SuiviBesoinTalentMapper {
         suivi.setCitoyen(citoyen);
         suivi.setStatut(req.statut());
 
-        // Conversion de BigDecimal vers Double pour l'entité
-        suivi.setScoreCorrespondance(BigDecimal.valueOf(req.scoreCorrespondance() != null ? req.scoreCorrespondance().doubleValue() : null));
+        suivi.setScoreCorrespondance(req.scoreCorrespondance());
 
         suivi.setDetailsCorrespondance(req.detailsCorrespondance());
         suivi.setNoteInterne(req.noteInterne());
@@ -53,24 +52,23 @@ public class SuiviBesoinTalentMapper {
         UUID besoinId = s.getBesoin() != null ? s.getBesoin().getId() : null;
         String besoinTitre = s.getBesoin() != null ? s.getBesoin().getTitre() : null;
         UUID citoyenId = s.getCitoyen() != null ? s.getCitoyen().getId() : null;
-        String citoyenNomComplet = s.getCitoyen() != null ? s.getCitoyen().getPrenom() + " " + s.getCitoyen().getNom() : null;
-
-        // Conversion sécurisée de Double vers BigDecimal pour le Response
-        BigDecimal scoreBd = s.getScoreCorrespondance() != null ? s.getScoreCorrespondance() : null;
-
         return new SuiviBesoinTalentResponse(
                 s.getId(),
                 orgId,
                 besoinId,
                 besoinTitre,
                 citoyenId,
-                citoyenNomComplet,
+                anonymiser(citoyenId),
                 s.getStatut(),
-                scoreBd, // <--- Utilisation du BigDecimal converti
+                s.getScoreCorrespondance(),
                 s.getDetailsCorrespondance(),
                 s.getNoteInterne(),
                 s.getDateCreation(),
                 s.getDateMiseAJour()
         );
+    }
+
+    private String anonymiser(UUID citoyenId) {
+        return citoyenId == null ? null : "Talent-" + citoyenId.toString().substring(0, 8).toUpperCase();
     }
 }

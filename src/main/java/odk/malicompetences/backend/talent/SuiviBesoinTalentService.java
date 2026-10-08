@@ -6,6 +6,7 @@ import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.citoyen.CitoyenRepository;
 import odk.malicompetences.backend.organisation.Organisation;
 import odk.malicompetences.backend.organisation.OrganisationRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +43,10 @@ public class SuiviBesoinTalentService {
                 .orElseThrow(() -> new RuntimeException("Organisation non trouvée"));
         Besoin besoin = besoinRepository.findById(request.besoinId())
                 .orElseThrow(() -> new RuntimeException("Besoin non trouvé"));
+        if (!besoin.getOrganisation().getId().equals(org.getId())) {
+            throw new AccessDeniedException(
+                    "Le besoin n’appartient pas à l’organisation indiquée.");
+        }
         Citoyen citoyen = citoyenRepository.findById(request.citoyenId())
                 .orElseThrow(() -> new RuntimeException("Citoyen non trouvé"));
 
@@ -58,8 +63,23 @@ public class SuiviBesoinTalentService {
 
     @Transactional(readOnly = true)
     public List<SuiviBesoinTalentResponse> listerParBesoin(UUID besoinId) {
-        return SuiviBesoinTalentRepository.findAll().stream()
-                .filter(s -> s.getBesoin().getId().equals(besoinId))
+        return SuiviBesoinTalentRepository.findByBesoinId(besoinId).stream()
+                .map(SuiviBesoinTalentMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public void verifierBesoinEtOrganisation(UUID besoinId, UUID organisationId) {
+        Besoin besoin = besoinRepository.findById(besoinId)
+                .orElseThrow(() -> new RuntimeException("Besoin non trouvé"));
+        if (!besoin.getOrganisation().getId().equals(organisationId)) {
+            throw new AccessDeniedException("Accès refusé à ce besoin.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<SuiviBesoinTalentResponse> listerParOrganisation(UUID organisationId) {
+        return SuiviBesoinTalentRepository.findByOrganisationId(organisationId).stream()
                 .map(SuiviBesoinTalentMapper::toResponse)
                 .collect(Collectors.toList());
     }

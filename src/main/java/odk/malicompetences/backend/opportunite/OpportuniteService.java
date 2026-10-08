@@ -67,4 +67,22 @@ public class OpportuniteService {
         }
         opportuniteRepository.deleteById(id);
     }
+
+    public OpportuniteResponse publier(UUID id) {
+        return changerStatut(id, StatutOpportunite.PUBLIEE);
+    }
+
+    public OpportuniteResponse archiver(UUID id) {
+        return changerStatut(id, StatutOpportunite.ARCHIVEE);
+    }
+
+    private OpportuniteResponse changerStatut(UUID id, StatutOpportunite statut) {
+        Opportunite opportunite = opportuniteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Opportunité non trouvée avec l'id : " + id));
+        opportunite.setStatut(statut);
+        if (statut == StatutOpportunite.PUBLIEE && opportunite.getDatePublication() == null) {
+            opportunite.setDatePublication(java.time.LocalDateTime.now());
+        }
+        return mapper.toResponse(opportuniteRepository.save(opportunite));
+    }
 }
