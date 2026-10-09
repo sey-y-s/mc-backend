@@ -2,16 +2,16 @@ package odk.malicompetences.backend.notification;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping({"/api/notifications", "/api/v1/notifications"})
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -21,57 +21,39 @@ public class NotificationController {
     }
 
     // Créer / Envoyer une notification
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public void creerNotification(
-            @Valid @RequestBody NotificationRequest request,
-            @AuthenticationPrincipal UserDetails user
-    ) {
-        if (!estAdministrateur(user)) {
-            throw new AccessDeniedException("Seul un administrateur peut envoyer une notification.");
-        }
+    public void creerNotification(@Valid @RequestBody NotificationRequest request) {
         notificationService.creerEtEnvoyerNotification(request);
     }
 
     // Récupérer les notifications d'un utilisateur
     @GetMapping("/utilisateur/{utilisateurId}")
-    public List<NotificationResponse> recupererParUtilisateur(
-            @PathVariable UUID utilisateurId,
-            @AuthenticationPrincipal UserDetails user
-    ) {
-        verifierUtilisateur(utilisateurId, user);
+    public List<NotificationResponse> recupererParUtilisateur(@PathVariable UUID utilisateurId, Authentication authentication) {
+        verifierProprietaireOuAdmin(utilisateurId, authentication);
         return notificationService.recupererNotificationsParUtilisateur(utilisateurId);
     }
 
     // Récupérer les notifications non lues d'un utilisateur
     @GetMapping("/utilisateur/{utilisateurId}/non-lues")
-    public List<NotificationResponse> recupererNonLues(
-            @PathVariable UUID utilisateurId,
-            @AuthenticationPrincipal UserDetails user
-    ) {
-        verifierUtilisateur(utilisateurId, user);
+    public List<NotificationResponse> recupererNonLues(@PathVariable UUID utilisateurId, Authentication authentication) {
+        verifierProprietaireOuAdmin(utilisateurId, authentication);
         return notificationService.recupererNotificationsNonLues(utilisateurId);
     }
 
-    // Marquer une notification comme lue
-    @PatchMapping("/{notificationDestinataireId}/marquer-lue")
-    public NotificationResponse marquerCommeLue(
-            @PathVariable UUID notificationDestinataireId,
-            @AuthenticationPrincipal UserDetails user
-    ) {
-        return notificationService.marquerCommeLue(
-                notificationDestinataireId, UUID.fromString(user.getUsername()));
-    }
-
-    private void verifierUtilisateur(UUID utilisateurId, UserDetails user) {
-        if (!UUID.fromString(user.getUsername()).equals(utilisateurId) && !estAdministrateur(user)) {
-            throw new AccessDeniedException("Vous ne pouvez consulter que vos notifications.");
+    private void verifierProprietaireOuAdmin(UUID utilisateurId, Authentication authentication) {
+        boolean administrateur = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (!administrateur && !authentication.getName().equals(utilisateurId.toString())) {
+            throw new AccessDeniedException("Vous ne pouvez consulter que vos propres notifications.");
         }
     }
 
-    private boolean estAdministrateur(UserDetails user) {
-        return user.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")
-                        || authority.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    // Marquer une notification comme lue
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PatchMapping("/{notificationDestinataireId}/marquer-lue")
+    public NotificationResponse marquerCommeLue(@PathVariable UUID notificationDestinataireId) {
+        return notificationService.marquerCommeLue(notificationDestinataireId);
     }
 }

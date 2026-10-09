@@ -36,6 +36,7 @@ public class ExperienceService {
     }
 
     public ExperienceResponse creerExperience(ExperienceRequest request) {
+        verifierProprietaire(request.citoyenId(), "CITOYEN");
         Citoyen citoyen = citoyenRepository.findById(request.citoyenId())
                 .orElseThrow(() -> new RuntimeException("Citoyen non trouvé avec l'id : " + request.citoyenId()));
 
@@ -74,6 +75,7 @@ public class ExperienceService {
     public ExperienceResponse modifierExperience(UUID id, ExperienceRequest request) {
         Experience experience = experienceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expérience non trouvée avec l'id : " + id));
+        verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
 
         Citoyen citoyen = null;
         if (request.citoyenId() != null) {
@@ -92,10 +94,10 @@ public class ExperienceService {
     }
 
     public void supprimerExperience(UUID id) {
-        if (!experienceRepository.existsById(id)) {
-            throw new RuntimeException("Expérience non trouvée avec l'id : " + id);
-        }
-        experienceRepository.deleteById(id);
+        Experience experience = experienceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Expérience non trouvée avec l'id : " + id));
+        verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
+        experienceRepository.delete(experience);
     }
 
     public ExperienceResponse getById(UUID id) {
@@ -108,8 +110,8 @@ public class ExperienceService {
 
     public ExperienceResponse modifier(UUID id, ExperienceRequest request) {
         Experience experience = experienceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expérience introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
+        verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
 
         experience.setTitre(request.titre());
         experience.setDescription(request.description());
@@ -140,10 +142,34 @@ public class ExperienceService {
 
     public void supprimer(UUID id) {
         Experience experience = experienceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expérience introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
+        verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
 
         experienceRepository.delete(experience);
     }
 
+
+    /** Vérifie directement que l'utilisateur connecté possède la ressource. */
+    private void verifierProprietaire(UUID proprietaireId, String roleAttendu) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean administrateur = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (administrateur) return;
+        boolean bonRole = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + roleAttendu));
+        boolean bonUtilisateur = false;
+        if (authentication != null && authentication.getName() != null && proprietaireId != null) {
+            try { bonUtilisateur = proprietaireId.equals(UUID.fromString(authentication.getName())); }
+            catch (IllegalArgumentException ignored) { bonUtilisateur = false; }
+        }
+        if (!bonRole || !bonUtilisateur) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé : cette ressource ne vous appartient pas.");
+        }
+    }
+
+    private boolean estAdministrateur() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    }
 }

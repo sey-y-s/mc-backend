@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Médias de Réalisation", description = "Gestion des médias (fichiers, images, liens) illustrant les réalisations du portfolio")
 @RestController
@@ -64,7 +65,6 @@ public class MediaRealisationController {
     ) {
         return service.ajouter(realisationId, request);
     }
-
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public MediaRealisationResponse televerser(

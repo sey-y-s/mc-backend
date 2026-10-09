@@ -63,7 +63,9 @@ public class UtilisateurService {
             throw new RuntimeException("Ce numéro de téléphone est déjà utilisé par un autre compte.");
         }
 
-        String passwordHash = (request.password() != null && !request.password().isBlank()) ? request.password() : null;
+        String passwordHash = (request.password() != null && !request.password().isBlank())
+                ? passwordEncoder.encode(request.password())
+                : null;
 
         utilisateurMapper.updateEntity(request, utilisateur, passwordHash);
         Utilisateur updated = utilisateurRepository.save(utilisateur);
