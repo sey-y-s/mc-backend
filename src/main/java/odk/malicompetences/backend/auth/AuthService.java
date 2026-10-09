@@ -86,12 +86,10 @@ public class AuthService {
         utilisateur.setPasswordHash(passwordEncoder.encode(request.password()));
         utilisateur.setRole(role);
         utilisateur.setActif(true);
-        Utilisateur compteCree = utilisateurRepository.save(utilisateur);
 
         if (role == Role.CITOYEN) {
             Citoyen citoyen = new Citoyen();
-            citoyen.setUtilisateur(compteCree);
-            citoyen.setId(compteCree.getId());
+            citoyen.setUtilisateur(utilisateur);
             citoyen.setCodePasseport(genererCodePasseport());
             citoyen.setNom(request.nom().trim());
             citoyen.setPrenom(request.prenom().trim());
@@ -102,16 +100,18 @@ public class AuthService {
                 citoyen.setCommune(communeRepository.findById(request.communeId())
                         .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")));
             }
-            citoyenRepository.save(citoyen);
+            utilisateur.setCitoyen(citoyen);
         } else {
             Organisation organisation = new Organisation();
-            organisation.setUtilisateur(compteCree);
-            organisation.setId(compteCree.getId());
+            organisation.setUtilisateur(utilisateur);
             organisation.setNom(request.nomOrganisation().trim());
             organisation.setDescription(request.descriptionOrganisation());
             organisation.setStatut(StatutOrganisation.EN_ATTENTE);
-            organisationRepository.save(organisation);
+
+            utilisateur.setOrganisation(organisation);
         }
+
+        utilisateurRepository.save(utilisateur);
     }
 
     private void verifierDonneesProfil(RegisterRequest request, Role role) {
