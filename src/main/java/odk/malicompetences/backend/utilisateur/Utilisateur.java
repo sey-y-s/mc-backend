@@ -3,6 +3,8 @@ package odk.malicompetences.backend.utilisateur;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import odk.malicompetences.backend.citoyen.Citoyen;
+import odk.malicompetences.backend.organisation.Organisation;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -35,6 +37,12 @@ public class Utilisateur {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private Role role;
+
+    @OneToOne(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Citoyen citoyen;
+
+    @OneToOne(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Organisation organisation;
 
     @PrePersist
     protected void onCreate() {
