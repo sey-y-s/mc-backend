@@ -32,4 +32,7 @@ public class Commune {
 
     @Column(nullable = false, length = 100)
     private String nom;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }

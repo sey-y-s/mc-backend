@@ -28,4 +28,7 @@ public class Region {
 
     @Column(nullable = false, length = 100)
     private String nom;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }

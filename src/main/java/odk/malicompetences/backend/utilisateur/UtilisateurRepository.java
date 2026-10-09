@@ -7,7 +7,6 @@ import java.util.UUID;
 
 public interface UtilisateurRepository
         extends JpaRepository<Utilisateur, UUID> {
-    Optional<Utilisateur> findByRole(Role role);
 
     Optional<Utilisateur> findByTelephone(String telephone);
 

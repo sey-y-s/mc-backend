@@ -2,16 +2,14 @@ package odk.malicompetences.backend.miseenrelation;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/demandes-mise-en-relation")
+@RequestMapping({"/api/demandes-mise-en-relation", "/api/v1/demandes-mise-en-relation"})
 public class DemandeMiseEnRelationController {
 
     private final DemandeMiseEnRelationService service;
@@ -23,68 +21,35 @@ public class DemandeMiseEnRelationController {
     // Créer
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public DemandeMiseEnRelationResponse creer(
-            @Valid @RequestBody DemandeMiseEnRelationRequest request,
-            @AuthenticationPrincipal UserDetails user
-    ) {
-        boolean organisation = user.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ORGANISATION"));
-        if (!isAdmin(user) && (!organisation || !UUID.fromString(user.getUsername()).equals(request.demandeurId()))) {
-            throw new AccessDeniedException("Vous ne pouvez créer une demande qu’en votre nom.");
-        }
+    public DemandeMiseEnRelationResponse creer(@Valid @RequestBody DemandeMiseEnRelationRequest request) {
         return service.creerDemande(request);
     }
 
     // Lister tout
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping
-    public List<DemandeMiseEnRelationResponse> lister(@AuthenticationPrincipal UserDetails user) {
-        if (isAdmin(user)) {
-            return service.listerToutes();
-        }
-        return service.listerParDemandeur(UUID.fromString(user.getUsername()));
+    public List<DemandeMiseEnRelationResponse> lister() {
+        return service.listerToutes();
     }
 
     // Trouver par ID
     @GetMapping("/{id}")
-    public DemandeMiseEnRelationResponse trouverParId(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal UserDetails user
-    ) {
-        DemandeMiseEnRelationResponse demande = service.trouverParId(id);
-        verifierAcces(demande, user);
-        return demande;
+    public DemandeMiseEnRelationResponse trouverParId(@PathVariable UUID id) {
+        return service.trouverParId(id);
     }
 
     // Modifier (ex: changer le statut en ACCEPTEE ou REFUSEE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/{id}")
-    public DemandeMiseEnRelationResponse modifier(
-            @PathVariable UUID id,
-            @Valid @RequestBody DemandeMiseEnRelationRequest request,
-            @AuthenticationPrincipal UserDetails user
-    ) {
-        verifierAcces(service.trouverParId(id), user);
+    public DemandeMiseEnRelationResponse modifier(@PathVariable UUID id, @Valid @RequestBody DemandeMiseEnRelationRequest request) {
         return service.modifierDemande(id, request);
     }
 
     // Supprimer
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void supprimer(@PathVariable UUID id, @AuthenticationPrincipal UserDetails user) {
-        verifierAcces(service.trouverParId(id), user);
+    public void supprimer(@PathVariable UUID id) {
         service.supprimerDemande(id);
-    }
-
-    private void verifierAcces(DemandeMiseEnRelationResponse demande, UserDetails user) {
-        UUID userId = UUID.fromString(user.getUsername());
-        boolean concerne = userId.equals(demande.demandeurId()) || userId.equals(demande.destinataireId());
-        if (!isAdmin(user) && !concerne) {
-            throw new AccessDeniedException("Accès refusé à cette demande.");
-        }
-    }
-
-    private boolean isAdmin(UserDetails user) {
-        return user.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")
-                        || authority.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 }

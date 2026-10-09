@@ -2,7 +2,7 @@ package odk.malicompetences.backend.territoire;
 
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import java.util.UUID; // <--- C'est cet import qu'il manquait pour UUID
 
 @Component
 public class CommuneMapper {
@@ -12,6 +12,7 @@ public class CommuneMapper {
         Commune commune = new Commune();
         commune.setRegion(region);
         commune.setNom(request.nom());
+        commune.setDescription(request.description());
         return commune;
     }
 
@@ -21,6 +22,7 @@ public class CommuneMapper {
                 commune.setRegion(region);
             }
             commune.setNom(request.nom());
+            commune.setDescription(request.description());
         }
     }
 
@@ -34,7 +36,8 @@ public class CommuneMapper {
                 commune.getId(),
                 regionId,
                 regionNom,
-                commune.getNom()
+                commune.getNom(),
+                commune.getDescription()
         );
     }
 }

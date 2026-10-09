@@ -6,9 +6,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/centres")
+@RequestMapping({"/api/centres", "/api/v1/centres"})
 public class centreController {
 
     private final centerService centerService;
@@ -18,6 +19,7 @@ public class centreController {
     }
 
     // Créer
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CenterResponse creer(@Valid @RequestBody CentreRequest request) {
@@ -37,12 +39,14 @@ public class centreController {
     }
 
     // Modifier
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/{id}")
     public CenterResponse modifier(@PathVariable UUID id, @Valid @RequestBody CentreRequest request) {
         return centerService.modifierCentre(id, request);
     }
 
     // Supprimer
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void supprimer(@PathVariable UUID id) {

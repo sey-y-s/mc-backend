@@ -39,6 +39,7 @@ public class DemandeMiseEnRelationService {
 
     // Créer une demande de mise en relation
     public DemandeMiseEnRelationResponse creerDemande(DemandeMiseEnRelationRequest request) {
+        verifierProprietaire(request.demandeurId(), "ORGANISATION");
         Utilisateur demandeur = utilisateurRepository.findById(request.demandeurId())
                 .orElseThrow(() -> new RuntimeException("Utilisateur demandeur non trouvé avec l'id : " + request.demandeurId()));
 
@@ -46,16 +47,21 @@ public class DemandeMiseEnRelationService {
                 .orElseThrow(() -> new RuntimeException("Citoyen destinataire non trouvé avec l'id : " + request.destinataireId()));
 
         SuiviBesoinTalent SuiviBesoinTalent = null;
-        if (request.suiviBesoinTalentId() != null) {
-            SuiviBesoinTalent = SuiviBesoinTalentRepository.findById(request.suiviBesoinTalentId())
-                    .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé avec l'id : " + request.suiviBesoinTalentId()));
-            if (!SuiviBesoinTalent.getOrganisation().getId().equals(request.demandeurId())) {
-                throw new org.springframework.security.access.AccessDeniedException(
-                        "Le suivi associé n’appartient pas au demandeur.");
+        if (request.SuiviBesoinTalentId() != null) {
+            SuiviBesoinTalent = SuiviBesoinTalentRepository.findById(request.SuiviBesoinTalentId())
+                    .orElseThrow(() -> new RuntimeException("Suivi de talent non trouvé avec l'id : " + request.SuiviBesoinTalentId()));
+            if (!SuiviBesoinTalent.getOrganisation().getId().equals(demandeur.getId())
+                    || !SuiviBesoinTalent.getCitoyen().getId().equals(destinataire.getId())) {
+                throw new IllegalArgumentException("Le suivi ne correspond pas à l'organisation et au citoyen de la demande");
             }
+        }
+        if (demandeur.getId().equals(destinataire.getId())) {
+            throw new IllegalArgumentException("Un compte ne peut pas demander une mise en relation avec lui-même");
         }
 
         DemandeMiseEnRelation demande = mapper.toEntity(request, demandeur, destinataire, SuiviBesoinTalent);
+        demande.setStatut(StatutContact.EN_ATTENTE);
+        demande.setDateReponse(null);
         DemandeMiseEnRelation savedDemande = demandeRepository.save(demande);
         return mapper.toResponse(savedDemande);
     }
@@ -65,6 +71,12 @@ public class DemandeMiseEnRelationService {
     public DemandeMiseEnRelationResponse trouverParId(UUID id) {
         DemandeMiseEnRelation demande = demandeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande de mise en relation non trouvée avec l'id : " + id));
+        if (!estAdministrateur()) {
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || (!demande.getDemandeur().getId().toString().equals(auth.getName()) && !demande.getDestinataire().getId().toString().equals(auth.getName()))) {
+                throw new org.springframework.security.access.AccessDeniedException("Accès refusé");
+            }
+        }
         return mapper.toResponse(demande);
     }
 
@@ -72,13 +84,6 @@ public class DemandeMiseEnRelationService {
     @Transactional(readOnly = true)
     public List<DemandeMiseEnRelationResponse> listerToutes() {
         return demandeRepository.findAll().stream()
-                .map(mapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<DemandeMiseEnRelationResponse> listerParDemandeur(UUID demandeurId) {
-        return demandeRepository.findByDemandeurId(demandeurId).stream()
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -99,5 +104,29 @@ public class DemandeMiseEnRelationService {
             throw new RuntimeException("Impossible de supprimer, demande non trouvée avec l'id : " + id);
         }
         demandeRepository.deleteById(id);
+    }
+
+    /** Vérifie directement que l'utilisateur connecté possède la ressource. */
+    private void verifierProprietaire(UUID proprietaireId, String roleAttendu) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean administrateur = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (administrateur) return;
+        boolean bonRole = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + roleAttendu));
+        boolean bonUtilisateur = false;
+        if (authentication != null && authentication.getName() != null && proprietaireId != null) {
+            try { bonUtilisateur = proprietaireId.equals(UUID.fromString(authentication.getName())); }
+            catch (IllegalArgumentException ignored) { bonUtilisateur = false; }
+        }
+        if (!bonRole || !bonUtilisateur) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé : cette ressource ne vous appartient pas.");
+        }
+    }
+
+    private boolean estAdministrateur() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 }

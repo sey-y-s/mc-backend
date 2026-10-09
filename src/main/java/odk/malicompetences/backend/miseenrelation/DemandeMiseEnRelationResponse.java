@@ -9,7 +9,7 @@ public record DemandeMiseEnRelationResponse(
         String demandeurNomComplet,
         UUID destinataireId,
         String destinataireNomComplet,
-        UUID suiviBesoinTalentId,
+        UUID SuiviBesoinTalentId,
         StatutContact statut,
         String message,
         LocalDateTime dateDemande,

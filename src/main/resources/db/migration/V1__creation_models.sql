@@ -10,7 +10,7 @@ CREATE TABLE utilisateur (
                              CONSTRAINT pk_utilisateur PRIMARY KEY (id),
                              CONSTRAINT uk_utilisateur_telephone UNIQUE (telephone),
                              CONSTRAINT uk_utilisateur_email UNIQUE (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE citoyen (
                          id CHAR(36) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE citoyen (
                          CONSTRAINT pk_citoyen PRIMARY KEY (id),
                          CONSTRAINT fk_citoyen_utilisateur
                              FOREIGN KEY (id) REFERENCES utilisateur(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE organisation (
                               id CHAR(36) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE organisation (
                               CONSTRAINT pk_organisation PRIMARY KEY (id),
                               CONSTRAINT fk_organisation_utilisateur
                                   FOREIGN KEY (id) REFERENCES utilisateur(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE centre (
                         id CHAR(36) NOT NULL,
@@ -46,26 +46,28 @@ CREATE TABLE centre (
                         telephone VARCHAR(30),
 
                         CONSTRAINT pk_centre PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE region (
                         id CHAR(36) NOT NULL,
                         nom VARCHAR(100) NOT NULL,
+                        description TEXT,
 
                         CONSTRAINT pk_region PRIMARY KEY (id),
                         CONSTRAINT uk_region_nom UNIQUE (nom)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE commune (
                          id CHAR(36) NOT NULL,
                          region_id CHAR(36) NOT NULL,
                          nom VARCHAR(100) NOT NULL,
+                         description TEXT,
 
                          CONSTRAINT pk_commune PRIMARY KEY (id),
                          CONSTRAINT fk_commune_region
                              FOREIGN KEY (region_id) REFERENCES region(id),
                          CONSTRAINT uk_commune_region_nom UNIQUE (region_id, nom)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE secteur_activite (
                                   id CHAR(36) NOT NULL,
@@ -74,7 +76,7 @@ CREATE TABLE secteur_activite (
 
                                   CONSTRAINT pk_secteur_activite PRIMARY KEY (id),
                                   CONSTRAINT uk_secteur_activite_nom UNIQUE (nom)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE metier (
                         id CHAR(36) NOT NULL,
@@ -88,7 +90,7 @@ CREATE TABLE metier (
                                 REFERENCES secteur_activite(id),
                         CONSTRAINT uk_metier_secteur_nom
                             UNIQUE (secteur_activite_id, nom)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE competence (
                             id CHAR(36) NOT NULL,
@@ -102,7 +104,7 @@ CREATE TABLE competence (
                                     REFERENCES metier(id),
                             CONSTRAINT uk_competence_metier_nom
                                 UNIQUE (metier_id, nom)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE citoyen_competence (
                                     id CHAR(36) NOT NULL,
@@ -124,7 +126,7 @@ CREATE TABLE citoyen_competence (
 
                                     CONSTRAINT uk_citoyen_competence
                                         UNIQUE (citoyen_id, competence_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE experience (
                             id CHAR(36) NOT NULL,
@@ -141,7 +143,7 @@ CREATE TABLE experience (
                             CONSTRAINT fk_experience_citoyen
                                 FOREIGN KEY (citoyen_id)
                                     REFERENCES citoyen(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE experience_competence (
                                        experience_id CHAR(36) NOT NULL,
@@ -157,7 +159,7 @@ CREATE TABLE experience_competence (
                                        CONSTRAINT fk_experience_competence_citoyen_competence
                                            FOREIGN KEY (citoyen_competence_id)
                                                REFERENCES citoyen_competence(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE portfolio_realisation (
     id CHAR(36) NOT NULL,
@@ -172,7 +174,7 @@ CREATE TABLE portfolio_realisation (
     CONSTRAINT fk_portfolio_realisation_citoyen
         FOREIGN KEY (citoyen_id)
         REFERENCES citoyen(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE media_realisation (
     id CHAR(36) NOT NULL,
@@ -186,7 +188,7 @@ CREATE TABLE media_realisation (
     CONSTRAINT fk_media_realisation_portfolio
         FOREIGN KEY (portfolio_realisation_id)
         REFERENCES portfolio_realisation(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE preuve (
                         id CHAR(36) NOT NULL,
@@ -202,7 +204,7 @@ CREATE TABLE preuve (
                         CONSTRAINT fk_preuve_citoyen_competence
                             FOREIGN KEY (citoyen_competence_id)
                                 REFERENCES citoyen_competence(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE validation (
                             id CHAR(36) NOT NULL,
@@ -233,7 +235,7 @@ CREATE TABLE validation (
                             CONSTRAINT fk_validation_centre
                                 FOREIGN KEY (centre_id)
                                     REFERENCES centre(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE besoin (
                         id CHAR(36) NOT NULL,
@@ -250,7 +252,7 @@ CREATE TABLE besoin (
                         CONSTRAINT fk_besoin_organisation
                             FOREIGN KEY (organisation_id)
                                 REFERENCES organisation(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE besoin_competence (
                                    id CHAR(36) NOT NULL,
@@ -271,7 +273,7 @@ CREATE TABLE besoin_competence (
 
                                    CONSTRAINT uk_besoin_competence
                                        UNIQUE (besoin_id, competence_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE suivi_talent (
                               id CHAR(36) NOT NULL,
@@ -301,7 +303,7 @@ CREATE TABLE suivi_talent (
 
                               CONSTRAINT uk_suivi_talent_besoin_citoyen
                                   UNIQUE (besoin_id, citoyen_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE demande_mise_en_relation (
                                           id CHAR(36) NOT NULL,
@@ -326,7 +328,7 @@ CREATE TABLE demande_mise_en_relation (
                                           CONSTRAINT fk_demande_relation_suivi
                                               FOREIGN KEY (suivi_talent_id)
                                                   REFERENCES suivi_talent(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE consultation_profil (
                                      id CHAR(36) NOT NULL,
@@ -343,7 +345,7 @@ CREATE TABLE consultation_profil (
                                      CONSTRAINT fk_consultation_profil_citoyen
                                          FOREIGN KEY (citoyen_id)
                                              REFERENCES citoyen(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE notification (
                               id CHAR(36) NOT NULL,
@@ -353,7 +355,7 @@ CREATE TABLE notification (
                               date_creation DATETIME NOT NULL,
 
                               CONSTRAINT pk_notification PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE notification_destinataire (
                                            id CHAR(36) NOT NULL,
@@ -375,7 +377,7 @@ CREATE TABLE notification_destinataire (
 
                                            CONSTRAINT uk_notification_destinataire
                                                UNIQUE (notification_id, utilisateur_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE categorie_opportunite (
                                        id CHAR(36) NOT NULL,
@@ -386,7 +388,7 @@ CREATE TABLE categorie_opportunite (
 
                                        CONSTRAINT uk_categorie_opportunite_nom
                                            UNIQUE (nom)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE opportunite (
                              id CHAR(36) NOT NULL,
@@ -403,7 +405,7 @@ CREATE TABLE opportunite (
                              CONSTRAINT fk_opportunite_categorie
                                  FOREIGN KEY (categorie_id)
                                      REFERENCES categorie_opportunite(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE indicateur_skills_gap (
                                        id CHAR(36) NOT NULL,
@@ -425,4 +427,4 @@ CREATE TABLE indicateur_skills_gap (
                                        CONSTRAINT fk_skills_gap_competence
                                            FOREIGN KEY (competence_id)
                                                REFERENCES competence(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);

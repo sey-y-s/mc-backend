@@ -2,9 +2,12 @@ package odk.malicompetences.backend.testnumerique;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/tests-numeriques")
@@ -38,14 +41,26 @@ public class TestNumeriqueController {
         return service.trouverPropositions(questionId);
     }
 
+    @PreAuthorize("hasAnyRole('CITOYEN', 'ADMIN', 'SUPER_ADMIN')")
+
     @PostMapping("/{id}/resultats")
     public ResultatTestResponse soumettre(@PathVariable UUID id,
-                                          @Valid @RequestBody ResultatTestRequest request) {
+                                          @Valid @RequestBody ResultatTestRequest request, Authentication authentication) {
+        boolean administrateur = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (!administrateur && !authentication.getName().equals(request.citoyenId().toString())) {
+            throw new AccessDeniedException("Vous ne pouvez soumettre un test que pour votre propre compte.");
+        }
         return ResultatTestResponse.from(service.soumettre(id, request.citoyenId(), request.reponses()));
     }
 
     @GetMapping("/resultats/citoyen/{citoyenId}")
-    public List<ResultatTestResponse> resultats(@PathVariable UUID citoyenId) {
+    public List<ResultatTestResponse> resultats(@PathVariable UUID citoyenId, Authentication authentication) {
+        boolean administrateur = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (!administrateur && !authentication.getName().equals(citoyenId.toString())) {
+            throw new AccessDeniedException("Vous ne pouvez consulter que vos propres résultats.");
+        }
         return resultatRepository.findByCitoyenIdOrderByDatePassageDesc(citoyenId)
                 .stream().map(ResultatTestResponse::from).toList();
     }

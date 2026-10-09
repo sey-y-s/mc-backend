@@ -7,7 +7,6 @@ import odk.malicompetences.backend.utilisateur.Utilisateur;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Component
@@ -22,40 +21,25 @@ public class ValidationMapper {
         validation.setValideePar(valideePar);
         validation.setCentre(centre);
         validation.setType(request.type());
-        validation.setStatut(request.statut());
+        // Une nouvelle validation reste en attente jusqu'à la décision d'un évaluateur autorisé.
+        validation.setStatut(StatutValidation.EN_ATTENTE);
         validation.setCommentaire(request.commentaire());
         validation.setDateExpiration(request.dateExpiration());
-
-        // Si le statut est APPROUVEE ou REJETEE à la création, on fixe la date de validation
-        if (request.statut() == StatutValidation.APPROUVEE || request.statut() == StatutValidation.REJETEE) {
-            validation.setDateValidation(LocalDateTime.now());
-        }
 
         return validation;
     }
 
-    public void updateEntity(ValidationRequest request, Validation validation, CitoyenCompetence citoyenCompetence, Preuve preuve, Utilisateur valideePar, Centre centre) {
+    public void updateEntity(ValidationRequest request, Validation validation, CitoyenCompetence citoyenCompetence, Preuve preuve, Centre centre) {
         if (request != null && validation != null) {
             if (citoyenCompetence != null) {
                 validation.setCitoyenCompetence(citoyenCompetence);
             }
             validation.setPreuve(preuve); // Peut être null
-            if (valideePar != null) {
-                validation.setValideePar(valideePar);
-            }
             validation.setCentre(centre); // Peut être null
             validation.setType(request.type());
             validation.setCommentaire(request.commentaire());
             validation.setDateExpiration(request.dateExpiration());
 
-            // Gestion du changement de statut
-            if (request.statut() != validation.getStatut()) {
-                if ((request.statut() == StatutValidation.APPROUVEE || request.statut() == StatutValidation.REJETEE)
-                        && validation.getDateValidation() == null) {
-                    validation.setDateValidation(LocalDateTime.now());
-                }
-                validation.setStatut(request.statut());
-            }
         }
     }
 
