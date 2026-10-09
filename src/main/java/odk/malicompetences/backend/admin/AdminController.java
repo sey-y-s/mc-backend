@@ -31,12 +31,14 @@ import odk.malicompetences.backend.competence.CompetenceRepository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 @Transactional
 public class AdminController {
 
@@ -247,6 +249,7 @@ public class AdminController {
     }
 
     @PutMapping("/users/{id}/role")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public AdminUserResponse modifierRole(
             @PathVariable UUID id,
             @RequestBody ModifierRoleRequest request

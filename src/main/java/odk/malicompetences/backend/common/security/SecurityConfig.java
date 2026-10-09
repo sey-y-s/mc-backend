@@ -1,9 +1,11 @@
 package odk.malicompetences.backend.common.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -32,19 +35,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/competences/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/opportunites/**", "/api/opportunites/**").permitAll()
-                        .requestMatchers("/api/admin/users", "/api/admin/users/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/opportunites/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/v1/citoyens/**").hasAnyRole("CITOYEN")
-                        .requestMatchers("/api/indicateurs/skills-gap/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/utilisateurs/**", "/api/centres/**", "/api/regions/**", "/api/communes/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/talents/**", "/api/matching/**").hasAnyRole("ORGANISATION", "ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/organisations/dashboard", "/api/organisations/mine").hasAnyRole("ORGANISATION", "ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/organisations/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/besoins/**", "/api/suivi-talents/**").hasAnyRole("ORGANISATION", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/opportunites", "/api/opportunites/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories-opportunites", "/api/categories-opportunites/*").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(e -> e.authenticationEntryPoint((request, response, ex) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Session expirée ou absente\"}");
+                }))
                 .build();
     }
 }

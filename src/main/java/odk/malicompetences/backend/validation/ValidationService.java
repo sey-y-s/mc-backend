@@ -10,6 +10,7 @@ import odk.malicompetences.backend.preuve.PreuveRepository;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -44,23 +45,33 @@ public class ValidationService {
         this.validationMapper = validationMapper;
     }
 
-    public ValidationResponse creerValidation(ValidationRequest request) {
+    public ValidationResponse creerValidation(ValidationRequest request, String authenticatedUserId) {
+        UUID validateurId;
+        try {
+            validateurId = UUID.fromString(authenticatedUserId);
+        } catch (IllegalArgumentException exception) {
+            throw new AccessDeniedException("Utilisateur authentifié invalide");
+        }
+
         CitoyenCompetence citoyenCompetence = citoyenCompetenceRepository.findById(request.citoyenCompetenceId())
-                .orElseThrow(() -> new RuntimeException("Compétence du citoyen non trouvée avec l'id : " + request.citoyenCompetenceId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Compétence du citoyen introuvable"));
 
         Preuve preuve = null;
         if (request.preuveId() != null) {
             preuve = preuveRepository.findById(request.preuveId())
-                    .orElseThrow(() -> new RuntimeException("Preuve non trouvée avec l'id : " + request.preuveId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Preuve introuvable"));
+            if (!preuve.getCitoyenCompetence().getId().equals(citoyenCompetence.getId())) {
+                throw new IllegalArgumentException("La preuve ne correspond pas à la compétence du citoyen");
+            }
         }
 
-        Utilisateur valideePar = utilisateurRepository.findById(request.valideeParId())
-                .orElseThrow(() -> new RuntimeException("Utilisateur validateur non trouvé avec l'id : " + request.valideeParId()));
+        Utilisateur valideePar = utilisateurRepository.findById(validateurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur validateur introuvable"));
 
         Centre centre = null;
         if (request.centreId() != null) {
             centre = centreRepository.findById(request.centreId())
-                    .orElseThrow(() -> new RuntimeException("Centre non trouvé avec l'id : " + request.centreId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Centre introuvable"));
         }
 
         Validation validation = validationMapper.toEntity(request, citoyenCompetence, preuve, valideePar, centre);
@@ -106,19 +117,13 @@ public class ValidationService {
                     .orElseThrow(() -> new RuntimeException("Preuve non trouvée avec l'id : " + request.preuveId()));
         }
 
-        Utilisateur valideePar = null;
-        if (request.valideeParId() != null) {
-            valideePar = utilisateurRepository.findById(request.valideeParId())
-                    .orElseThrow(() -> new RuntimeException("Utilisateur validateur non trouvé avec l'id : " + request.valideeParId()));
-        }
-
         Centre centre = null;
         if (request.centreId() != null) {
             centre = centreRepository.findById(request.centreId())
                     .orElseThrow(() -> new RuntimeException("Centre non trouvé avec l'id : " + request.centreId()));
         }
 
-        validationMapper.updateEntity(request, validation, citoyenCompetence, preuve, valideePar, centre);
+        validationMapper.updateEntity(request, validation, citoyenCompetence, preuve, centre);
         Validation updated = validationRepository.save(validation);
         return validationMapper.toResponse(updated);
     }
@@ -147,13 +152,19 @@ public class ValidationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Validation introuvable"));
 
+        if (statut == null) {
+            throw new IllegalArgumentException("Le statut est obligatoire");
+        }
+        if (validation.getStatut() != StatutValidation.EN_ATTENTE) {
+            throw new IllegalStateException("Cette validation a déjà reçu une décision");
+        }
+        if (statut == StatutValidation.EN_ATTENTE) {
+            throw new IllegalArgumentException("Le nouveau statut doit être APPROUVEE ou REJETEE");
+        }
+
         validation.setStatut(statut);
         validation.setCommentaire(commentaire);
-
-        if (statut == StatutValidation.APPROUVEE
-                || statut == StatutValidation.REJETEE) {
-            validation.setDateValidation(LocalDateTime.now());
-        }
+        validation.setDateValidation(LocalDateTime.now());
 
         return validationMapper.toResponse(
                 validationRepository.save(validation)

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Compétences Citoyen", description = "Gestion des compétences déclarées par les citoyens")
 @RestController
@@ -53,6 +54,7 @@ public class CitoyenCompetenceController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
+    @PreAuthorize("hasAnyRole('CITOYEN', 'ADMIN', 'SUPER_ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CitoyenCompetenceResponse ajouter(

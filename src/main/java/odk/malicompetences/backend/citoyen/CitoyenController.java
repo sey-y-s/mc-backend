@@ -8,20 +8,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import odk.malicompetences.backend.cv.CvService;
 import odk.malicompetences.backend.common.exception.ApiError;
+import org.springframework.http.HttpStatus;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.charset.StandardCharsets;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Tag(name = "Citoyens", description = "Gestion des profils citoyens et passeports de compétences")
@@ -35,30 +35,6 @@ public class CitoyenController {
     public CitoyenController(CitoyenService citoyenService, CvService cvService) {
         this.citoyenService = citoyenService;
         this.cvService = cvService;
-    }
-
-    @Operation(summary = "Télécharger le CV du citoyen connecté")
-    @GetMapping("/me/cv")
-    public ResponseEntity<ByteArrayResource> telechargerCv(
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        CvService.GeneratedCv cv = cvService.generate(UUID.fromString(userDetails.getUsername()));
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                        .filename(cv.fileName(), StandardCharsets.UTF_8)
-                        .build()
-                        .toString())
-                .body(new ByteArrayResource(cv.content()));
-    }
-
-    @Operation(summary = "Mettre à jour la photo du citoyen connecté")
-    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public CitoyenResponse mettreAJourPhoto(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestPart("fichier") MultipartFile fichier
-    ) {
-        return citoyenService.mettreAJourPhoto(UUID.fromString(userDetails.getUsername()), fichier);
     }
 
     @Operation(
@@ -87,6 +63,7 @@ public class CitoyenController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/utilisateur/{utilisateurId}")
     @ResponseStatus(HttpStatus.CREATED)
     public CitoyenResponse creer(
@@ -113,6 +90,7 @@ public class CitoyenController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
+    @PreAuthorize("#id.toString() == authentication.name or hasAnyRole('ADMIN', 'SUPER_ADMIN', 'EVALUATEUR')")
     @GetMapping("/{id}")
     public CitoyenResponse trouverParId(
             @Parameter(description = "Identifiant UUID du citoyen", required = true)
@@ -142,6 +120,7 @@ public class CitoyenController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CitoyenResponse> modifier(
             @Parameter(description = "Identifiant UUID du citoyen", required = true)
@@ -149,5 +128,45 @@ public class CitoyenController {
             @Valid @RequestBody CitoyenRequest request) {
 
         return ResponseEntity.ok(citoyenService.modifier(id, request));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CITOYEN')")
+    public CitoyenResponse monProfil(@AuthenticationPrincipal UserDetails principal) {
+        return citoyenService.trouverParId(UUID.fromString(principal.getUsername()));
+    }
+
+    @GetMapping("/me/cv")
+    @PreAuthorize("hasRole('CITOYEN')")
+    @Operation(summary = "Télécharger le CV du citoyen connecté")
+    public ResponseEntity<ByteArrayResource> telechargerCv(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        CvService.GeneratedCv cv = cvService.generate(UUID.fromString(userDetails.getUsername()));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(cv.fileName(), StandardCharsets.UTF_8)
+                        .build()
+                        .toString())
+                .body(new ByteArrayResource(cv.content()));
+    }
+
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('CITOYEN')")
+    @Operation(summary = "Mettre à jour la photo du citoyen connecté")
+    public CitoyenResponse mettreAJourPhoto(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestPart("fichier") MultipartFile fichier
+    ) {
+        return citoyenService.mettreAJourPhoto(UUID.fromString(userDetails.getUsername()), fichier);
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("hasRole('CITOYEN')")
+    public CitoyenResponse modifierMonProfil(
+            @AuthenticationPrincipal UserDetails principal,
+            @Valid @RequestBody CitoyenRequest request) {
+        return citoyenService.modifierMonProfil(UUID.fromString(principal.getUsername()), request);
     }
 }

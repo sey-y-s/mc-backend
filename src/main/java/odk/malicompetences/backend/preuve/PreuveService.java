@@ -32,6 +32,7 @@ public class PreuveService {
         CitoyenCompetence citoyenCompetence = citoyenCompetenceRepository.findById(request.citoyenCompetenceId())
                 .orElseThrow(() -> new RuntimeException("Compétence du citoyen non trouvée avec l'id : " + request.citoyenCompetenceId()));
 
+        verifierProprietaire(citoyenCompetence.getCitoyen().getId(), "CITOYEN");
         Preuve preuve = preuveMapper.toEntity(request, citoyenCompetence);
         Preuve saved = preuveRepository.save(preuve);
         return preuveMapper.toResponse(saved);
@@ -55,6 +56,7 @@ public class PreuveService {
     public PreuveResponse modifierPreuve(UUID id, PreuveRequest request) {
         Preuve preuve = preuveRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Preuve non trouvée avec l'id : " + id));
+        verifierProprietaire(preuve.getCitoyenCompetence().getCitoyen().getId(), "CITOYEN");
 
         preuveMapper.updateEntity(request, preuve);
         Preuve updated = preuveRepository.save(preuve);
@@ -62,10 +64,10 @@ public class PreuveService {
     }
 
     public void supprimerPreuve(UUID id) {
-        if (!preuveRepository.existsById(id)) {
-            throw new RuntimeException("Preuve non trouvée avec l'id : " + id);
-        }
-        preuveRepository.deleteById(id);
+        Preuve preuve = preuveRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Preuve non trouvée avec l'id : " + id));
+        verifierProprietaire(preuve.getCitoyenCompetence().getCitoyen().getId(), "CITOYEN");
+        preuveRepository.delete(preuve);
     }
 
     public PreuveResponse getById(UUID id) {
@@ -78,8 +80,8 @@ public class PreuveService {
 
     public PreuveResponse modifier(UUID id, PreuveRequest request) {
         Preuve preuve = preuveRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Preuve introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Preuve introuvable"));
+        verifierProprietaire(preuve.getCitoyenCompetence().getCitoyen().getId(), "CITOYEN");
 
         preuve.setType(request.type());
         preuve.setTitre(request.titre());
@@ -93,9 +95,33 @@ public class PreuveService {
 
     public void supprimer(UUID id) {
         Preuve preuve = preuveRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Preuve introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Preuve introuvable"));
+        verifierProprietaire(preuve.getCitoyenCompetence().getCitoyen().getId(), "CITOYEN");
 
         preuveRepository.delete(preuve);
+    }
+
+    /** Vérifie directement que l'utilisateur connecté possède la ressource. */
+    private void verifierProprietaire(UUID proprietaireId, String roleAttendu) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean administrateur = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (administrateur) return;
+        boolean bonRole = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + roleAttendu));
+        boolean bonUtilisateur = false;
+        if (authentication != null && authentication.getName() != null && proprietaireId != null) {
+            try { bonUtilisateur = proprietaireId.equals(UUID.fromString(authentication.getName())); }
+            catch (IllegalArgumentException ignored) { bonUtilisateur = false; }
+        }
+        if (!bonRole || !bonUtilisateur) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé : cette ressource ne vous appartient pas.");
+        }
+    }
+
+    private boolean estAdministrateur() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 }

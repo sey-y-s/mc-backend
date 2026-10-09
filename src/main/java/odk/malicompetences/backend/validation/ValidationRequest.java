@@ -12,16 +12,10 @@ public record ValidationRequest(
 
         UUID preuveId,
 
-        @NotNull(message = "L'ID de l'utilisateur validateur est obligatoire")
-        UUID valideeParId,
-
         UUID centreId,
 
         @NotNull(message = "Le type de validation est obligatoire")
         TypeValidation type,
-
-        @NotNull(message = "Le statut de validation est obligatoire")
-        StatutValidation statut,
 
         @Size(max = 1000, message = "Le commentaire ne doit pas dépasser 1000 caractères")
         String commentaire,
