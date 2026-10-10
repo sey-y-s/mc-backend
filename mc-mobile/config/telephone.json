@@ -1,0 +1,5 @@
+{
+  "APP_ENV": "dev",
+  "USE_MOCKS": false,
+  "API_BASE_URL": "http://192.168.11.253:8080"
+}
