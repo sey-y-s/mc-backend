@@ -1,0 +1,218 @@
+package odk.malicompetences.backend.validation;
+
+import odk.malicompetences.backend.centre.Centre;
+import odk.malicompetences.backend.centre.CentreRepository;
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
+import odk.malicompetences.backend.competence.CitoyenCompetence;
+import odk.malicompetences.backend.competence.CitoyenCompetenceRepository;
+import odk.malicompetences.backend.preuve.Preuve;
+import odk.malicompetences.backend.preuve.PreuveRepository;
+import odk.malicompetences.backend.utilisateur.Utilisateur;
+import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class ValidationService {
+
+    private final ValidationRepository validationRepository;
+    private final CitoyenCompetenceRepository citoyenCompetenceRepository;
+    private final PreuveRepository preuveRepository;
+    private final UtilisateurRepository utilisateurRepository;
+    private final CentreRepository centreRepository;
+    private final ValidationMapper validationMapper;
+
+    public ValidationService(
+            ValidationRepository validationRepository,
+            CitoyenCompetenceRepository citoyenCompetenceRepository,
+            PreuveRepository preuveRepository,
+            UtilisateurRepository utilisateurRepository,
+            CentreRepository centreRepository,
+            ValidationMapper validationMapper
+    ) {
+        this.validationRepository = validationRepository;
+        this.citoyenCompetenceRepository = citoyenCompetenceRepository;
+        this.preuveRepository = preuveRepository;
+        this.utilisateurRepository = utilisateurRepository;
+        this.centreRepository = centreRepository;
+        this.validationMapper = validationMapper;
+    }
+
+    public ValidationResponse creerValidation(ValidationRequest request, String authenticatedUserId) {
+        UUID validateurId;
+        try {
+            validateurId = UUID.fromString(authenticatedUserId);
+        } catch (IllegalArgumentException exception) {
+            throw new AccessDeniedException("Utilisateur authentifié invalide");
+        }
+
+        CitoyenCompetence citoyenCompetence = citoyenCompetenceRepository.findById(request.citoyenCompetenceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Compétence du citoyen introuvable"));
+
+        Preuve preuve = null;
+        if (request.preuveId() != null) {
+            preuve = preuveRepository.findById(request.preuveId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Preuve introuvable"));
+            if (!preuve.getCitoyenCompetence().getId().equals(citoyenCompetence.getId())) {
+                throw new IllegalArgumentException("La preuve ne correspond pas à la compétence du citoyen");
+            }
+        }
+
+        Utilisateur valideePar = utilisateurRepository.findById(validateurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur validateur introuvable"));
+
+        Centre centre = null;
+        if (request.centreId() != null) {
+            centre = centreRepository.findById(request.centreId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Centre introuvable"));
+        }
+
+        Validation validation = validationMapper.toEntity(request, citoyenCompetence, preuve, valideePar, centre);
+        Validation saved = validationRepository.save(validation);
+        return validationMapper.toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public ValidationResponse trouverParId(UUID id) {
+        Validation validation = validationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Validation non trouvée avec l'id : " + id));
+        return validationMapper.toResponse(validation);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ValidationResponse> listerToutes() {
+        return validationRepository.findAll().stream()
+                .map(validationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ValidationResponse> listerParCitoyenCompetence(UUID citoyenCompetenceId) {
+        return validationRepository.findAll().stream()
+                .filter(v -> v.getCitoyenCompetence().getId().equals(citoyenCompetenceId))
+                .map(validationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CitoyenValidationResponse> listerPourCitoyen(
+            UUID citoyenId,
+            StatutValidation statut,
+            int page,
+            int size
+    ) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new IllegalArgumentException("La pagination doit utiliser page >= 0 et size entre 1 et 100");
+        }
+        PageRequest pageable = PageRequest.of(
+                page, size, Sort.by(Sort.Direction.DESC, "dateDemande")
+        );
+        Page<Validation> validations = statut == null
+                ? validationRepository.findByCitoyenCompetenceCitoyenId(citoyenId, pageable)
+                : validationRepository.findByCitoyenCompetenceCitoyenIdAndStatut(
+                        citoyenId, statut, pageable
+                );
+        return validations.map(CitoyenValidationResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CitoyenValidationResponse> listerPourCompetenceCitoyen(
+            UUID citoyenCompetenceId,
+            UUID citoyenId
+    ) {
+        return validationRepository
+                .findByCitoyenCompetenceIdAndCitoyenCompetenceCitoyenId(
+                        citoyenCompetenceId, citoyenId
+                ).stream()
+                .map(CitoyenValidationResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CitoyenValidationResponse trouverPourCitoyen(UUID id, UUID citoyenId) {
+        return validationRepository.findByIdAndCitoyenCompetenceCitoyenId(id, citoyenId)
+                .map(CitoyenValidationResponse::from)
+                .orElseThrow(() -> new ResourceNotFoundException("Validation introuvable"));
+    }
+
+    public ValidationResponse modifierValidation(UUID id, ValidationRequest request) {
+        Validation validation = validationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Validation non trouvée avec l'id : " + id));
+
+        CitoyenCompetence citoyenCompetence = null;
+        if (request.citoyenCompetenceId() != null) {
+            citoyenCompetence = citoyenCompetenceRepository.findById(request.citoyenCompetenceId())
+                    .orElseThrow(() -> new RuntimeException("Compétence du citoyen non trouvée avec l'id : " + request.citoyenCompetenceId()));
+        }
+
+        Preuve preuve = null;
+        if (request.preuveId() != null) {
+            preuve = preuveRepository.findById(request.preuveId())
+                    .orElseThrow(() -> new RuntimeException("Preuve non trouvée avec l'id : " + request.preuveId()));
+        }
+
+        Centre centre = null;
+        if (request.centreId() != null) {
+            centre = centreRepository.findById(request.centreId())
+                    .orElseThrow(() -> new RuntimeException("Centre non trouvé avec l'id : " + request.centreId()));
+        }
+
+        validationMapper.updateEntity(request, validation, citoyenCompetence, preuve, centre);
+        Validation updated = validationRepository.save(validation);
+        return validationMapper.toResponse(updated);
+    }
+
+    public void supprimerValidation(UUID id) {
+        if (!validationRepository.existsById(id)) {
+            throw new RuntimeException("Validation non trouvée avec l'id : " + id);
+        }
+        validationRepository.deleteById(id);
+    }
+
+    public ValidationResponse getById(UUID id) {
+        Validation validation = validationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Validation introuvable"));
+
+        return validationMapper.toResponse(validation);
+    }
+
+    public ValidationResponse modifierStatut(
+            UUID id,
+            StatutValidation statut,
+            String commentaire) {
+
+        Validation validation = validationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Validation introuvable"));
+
+        if (statut == null) {
+            throw new IllegalArgumentException("Le statut est obligatoire");
+        }
+        if (validation.getStatut() != StatutValidation.EN_ATTENTE) {
+            throw new IllegalStateException("Cette validation a déjà reçu une décision");
+        }
+        if (statut == StatutValidation.EN_ATTENTE) {
+            throw new IllegalArgumentException("Le nouveau statut doit être APPROUVEE ou REJETEE");
+        }
+
+        validation.setStatut(statut);
+        validation.setCommentaire(commentaire);
+        validation.setDateValidation(LocalDateTime.now());
+
+        return validationMapper.toResponse(
+                validationRepository.save(validation)
+        );
+    }
+
+}
