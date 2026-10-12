@@ -9,11 +9,15 @@ import odk.malicompetences.backend.citoyen.CitoyenRepository;
 import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
 import odk.malicompetences.backend.competence.CitoyenCompetenceRepository;
+import odk.malicompetences.backend.competence.EtatCompetence;
 import odk.malicompetences.backend.competence.NiveauCompetence;
+import odk.malicompetences.backend.portfolio.PortfolioRealisationRepository;
+import odk.malicompetences.backend.territoire.Commune;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -27,17 +31,20 @@ public class TalentRechercheService {
     private final CitoyenCompetenceRepository citoyenCompetenceRepository;
     private final BesoinRepository besoinRepository;
     private final BesoinCompetenceRepository besoinCompetenceRepository;
+    private final PortfolioRealisationRepository portfolioRealisationRepository;
 
     public TalentRechercheService(
             CitoyenRepository citoyenRepository,
             CitoyenCompetenceRepository citoyenCompetenceRepository,
             BesoinRepository besoinRepository,
-            BesoinCompetenceRepository besoinCompetenceRepository
+            BesoinCompetenceRepository besoinCompetenceRepository,
+            PortfolioRealisationRepository portfolioRealisationRepository
     ) {
         this.citoyenRepository = citoyenRepository;
         this.citoyenCompetenceRepository = citoyenCompetenceRepository;
         this.besoinRepository = besoinRepository;
         this.besoinCompetenceRepository = besoinCompetenceRepository;
+        this.portfolioRealisationRepository = portfolioRealisationRepository;
     }
 
     public List<TalentRechercheResponse> rechercher(
@@ -46,10 +53,22 @@ public class TalentRechercheService {
             String localisation,
             String disponibilite
     ) {
-        return citoyenRepository.findAll().stream()
-                .filter(citoyen -> matches(citoyen, competence, metier, localisation, disponibilite))
-                .map(this::toResponse)
+        return rechercher(new TalentFiltres(competence, metier, localisation, disponibilite,
+                null, null, null, null, null, null), null, null);
+    }
+
+    /** Recherche filtrée ; si {@code size} est fourni, renvoie la page demandée (page commence à 0). */
+    public List<TalentRechercheResponse> rechercher(TalentFiltres filtres, Integer page, Integer size) {
+        List<Citoyen> trouves = citoyenRepository.findAll().stream()
+                .filter(citoyen -> matches(citoyen, filtres))
+                .sorted(Comparator.comparing(citoyen -> citoyen.getId().toString()))
                 .toList();
+        if (size != null && size > 0) {
+            int debut = Math.min(Math.max(page == null ? 0 : page, 0) * size, trouves.size());
+            int fin = Math.min(debut + size, trouves.size());
+            trouves = trouves.subList(debut, fin);
+        }
+        return trouves.stream().map(this::toResponse).toList();
     }
 
     public TalentRechercheResponse trouverParId(UUID id) {
@@ -75,21 +94,53 @@ public class TalentRechercheService {
                 .toList();
     }
 
-    private boolean matches(
-            Citoyen citoyen,
-            String competence,
-            String metier,
-            String localisation,
-            String disponibilite
-    ) {
+    private boolean matches(Citoyen citoyen, TalentFiltres f) {
         List<CitoyenCompetence> competences = citoyenCompetenceRepository.findByCitoyenId(citoyen.getId());
-        return containsAny(competence, competences.stream()
-                        .map(item -> item.getCompetence().getNom()).toList())
-                && containsAny(metier, competences.stream()
-                        .map(item -> item.getCompetence().getMetier().getNom()).toList())
-                && containsAny(localisation, localisationValues(citoyen))
-                && (disponibilite == null || disponibilite.isBlank()
-                        || citoyen.getDisponibilite().name().equalsIgnoreCase(disponibilite.trim()));
+        List<String> nomsCompetences = competences.stream()
+                .map(item -> item.getCompetence().getNom()).toList();
+        List<String> nomsMetiers = competences.stream()
+                .map(item -> item.getCompetence().getMetier().getNom()).toList();
+        List<String> lieux = localisationValues(citoyen);
+
+        if (!containsAny(f.competence(), nomsCompetences)
+                || !containsAny(f.metier(), nomsMetiers)
+                || !containsAny(f.localisation(), lieux)) {
+            return false;
+        }
+        if (f.disponibilite() != null && !f.disponibilite().isBlank()
+                && !citoyen.getDisponibilite().name().equalsIgnoreCase(f.disponibilite().trim())) {
+            return false;
+        }
+        if (f.q() != null && !f.q().isBlank()) {
+            List<String> texte = new ArrayList<>(nomsCompetences);
+            texte.addAll(nomsMetiers);
+            texte.addAll(lieux);
+            if (!containsAny(f.q(), texte)) {
+                return false;
+            }
+        }
+        if (f.competenceId() != null && competences.stream().noneMatch(item ->
+                item.getCompetence().getId().equals(f.competenceId()) && niveauSuffisant(item, f))) {
+            return false;
+        }
+        if (f.metierId() != null && competences.stream().noneMatch(item ->
+                item.getCompetence().getMetier().getId().equals(f.metierId()) && niveauSuffisant(item, f))) {
+            return false;
+        }
+        if (f.competenceId() == null && f.metierId() == null && f.niveauMin() != null
+                && competences.stream().noneMatch(item -> niveauSuffisant(item, f))) {
+            return false;
+        }
+        Commune commune = citoyen.getCommune();
+        if (f.regionId() != null
+                && (commune == null || !commune.getRegion().getId().equals(f.regionId()))) {
+            return false;
+        }
+        return f.communeId() == null || (commune != null && commune.getId().equals(f.communeId()));
+    }
+
+    private boolean niveauSuffisant(CitoyenCompetence item, TalentFiltres f) {
+        return f.niveauMin() == null || level(item.getNiveau()) >= level(f.niveauMin());
     }
 
     private List<String> localisationValues(Citoyen citoyen) {
@@ -152,7 +203,11 @@ public class TalentRechercheService {
         List<TalentCompetenceResponse> skills = links.stream()
                 .map(link -> new TalentCompetenceResponse(
                         link.getCompetence().getId(),
-                        link.getCompetence().getNom()))
+                        link.getCompetence().getNom(),
+                        link.getCompetence().getId(),
+                        link.getNiveau(),
+                        link.getEtat() == EtatCompetence.VALIDEE,
+                        !link.getPreuves().isEmpty()))
                 .distinct()
                 .toList();
         String metier = links.stream()
@@ -161,16 +216,32 @@ public class TalentRechercheService {
         String secteur = links.stream()
                 .map(link -> link.getCompetence().getMetier().getSecteurActivite().getNom())
                 .findFirst().orElse(null);
-        String city = citoyen.getCommune() == null ? null : citoyen.getCommune().getNom();
+        List<UUID> metierIds = links.stream()
+                .map(link -> link.getCompetence().getMetier().getId())
+                .distinct()
+                .toList();
+        int nbValidations = (int) links.stream()
+                .filter(link -> link.getEtat() == EtatCompetence.VALIDEE).count();
+        int nbPreuves = links.stream().mapToInt(link -> link.getPreuves().size()).sum();
+        boolean aPortfolio = !portfolioRealisationRepository.findByCitoyenId(citoyen.getId()).isEmpty();
+        Commune commune = citoyen.getCommune();
         return new TalentRechercheResponse(
                 citoyen.getId(),
                 "Profil-" + citoyen.getId().toString().substring(0, 8),
                 metier,
                 secteur,
-                city,
+                commune == null ? null : commune.getNom(),
                 citoyen.getDisponibilite(),
                 citoyen.getDisponibilite() == odk.malicompetences.backend.citoyen.Disponibilite.DISPONIBLE,
-                skills
+                skills,
+                commune == null ? null : commune.getRegion().getId(),
+                commune == null ? null : commune.getRegion().getNom(),
+                commune == null ? null : commune.getId(),
+                commune == null ? null : commune.getNom(),
+                metierIds,
+                nbValidations,
+                nbPreuves,
+                aPortfolio
         );
     }
 }

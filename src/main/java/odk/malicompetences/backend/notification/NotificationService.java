@@ -2,6 +2,7 @@ package odk.malicompetences.backend.notification;
 
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,9 +65,17 @@ public class NotificationService {
     }
 
     // Marquer une notification comme lue
-    public NotificationResponse marquerCommeLue(UUID notificationDestinataireId) {
-        NotificationDestinataire nd = notificationDestinataireRepository.findById(notificationDestinataireId)
-                .orElseThrow(() -> new RuntimeException("Notification destinataire non trouvée avec l'id : " + notificationDestinataireId));
+    public NotificationResponse marquerCommeLue(
+            UUID notificationDestinataireId,
+            UUID authenticatedUserId,
+            boolean administrateur
+    ) {
+        NotificationDestinataire nd = (administrateur
+                ? notificationDestinataireRepository.findById(notificationDestinataireId)
+                : notificationDestinataireRepository.findByIdAndUtilisateurId(
+                        notificationDestinataireId, authenticatedUserId
+                )).orElseThrow(() ->
+                new ResourceNotFoundException("Notification destinataire introuvable"));
 
         if (Boolean.FALSE.equals(nd.getLu())) {
             nd.setLu(true);

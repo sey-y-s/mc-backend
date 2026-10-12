@@ -47,6 +47,9 @@ public class Validation {
     @Column(nullable = false, length = 30)
     private StatutValidation statut;
 
+    @Column(name = "date_demande", nullable = false, updatable = false)
+    private LocalDateTime dateDemande;
+
     @Column(name = "date_validation")
     private LocalDateTime dateValidation;
 
@@ -55,4 +58,11 @@ public class Validation {
 
     @Column(name = "date_expiration")
     private LocalDate dateExpiration;
+
+    @PrePersist
+    protected void onCreate() {
+        if (dateDemande == null) {
+            dateDemande = LocalDateTime.now();
+        }
+    }
 }

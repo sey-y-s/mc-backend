@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.AccessDeniedException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping({"/api/notifications", "/api/v1/notifications"})
@@ -51,9 +52,22 @@ public class NotificationController {
     }
 
     // Marquer une notification comme lue
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PatchMapping("/{notificationDestinataireId}/marquer-lue")
-    public NotificationResponse marquerCommeLue(@PathVariable UUID notificationDestinataireId) {
-        return notificationService.marquerCommeLue(notificationDestinataireId);
+    public NotificationResponse marquerCommeLue(
+            @PathVariable UUID notificationDestinataireId,
+            Authentication authentication
+    ) {
+        boolean administrateur = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                        || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        UUID utilisateurId;
+        try {
+            utilisateurId = UUID.fromString(authentication.getName());
+        } catch (IllegalArgumentException exception) {
+            throw new AccessDeniedException("Utilisateur authentifié invalide");
+        }
+        return notificationService.marquerCommeLue(
+                notificationDestinataireId, utilisateurId, administrateur
+        );
     }
 }

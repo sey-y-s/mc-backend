@@ -9,6 +9,9 @@ import odk.malicompetences.backend.preuve.Preuve;
 import odk.malicompetences.backend.preuve.PreuveRepository;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,6 +104,47 @@ public class ValidationService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public Page<CitoyenValidationResponse> listerPourCitoyen(
+            UUID citoyenId,
+            StatutValidation statut,
+            int page,
+            int size
+    ) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new IllegalArgumentException("La pagination doit utiliser page >= 0 et size entre 1 et 100");
+        }
+        PageRequest pageable = PageRequest.of(
+                page, size, Sort.by(Sort.Direction.DESC, "dateDemande")
+        );
+        Page<Validation> validations = statut == null
+                ? validationRepository.findByCitoyenCompetenceCitoyenId(citoyenId, pageable)
+                : validationRepository.findByCitoyenCompetenceCitoyenIdAndStatut(
+                        citoyenId, statut, pageable
+                );
+        return validations.map(CitoyenValidationResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CitoyenValidationResponse> listerPourCompetenceCitoyen(
+            UUID citoyenCompetenceId,
+            UUID citoyenId
+    ) {
+        return validationRepository
+                .findByCitoyenCompetenceIdAndCitoyenCompetenceCitoyenId(
+                        citoyenCompetenceId, citoyenId
+                ).stream()
+                .map(CitoyenValidationResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CitoyenValidationResponse trouverPourCitoyen(UUID id, UUID citoyenId) {
+        return validationRepository.findByIdAndCitoyenCompetenceCitoyenId(id, citoyenId)
+                .map(CitoyenValidationResponse::from)
+                .orElseThrow(() -> new ResourceNotFoundException("Validation introuvable"));
+    }
+
     public ValidationResponse modifierValidation(UUID id, ValidationRequest request) {
         Validation validation = validationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Validation non trouvée avec l'id : " + id));
@@ -147,6 +191,15 @@ public class ValidationService {
             UUID id,
             StatutValidation statut,
             String commentaire) {
+        return modifierStatut(id, statut, commentaire, null);
+    }
+
+    /** Enregistre également l'utilisateur réellement auteur de la décision, lorsqu'il est fourni. */
+    public ValidationResponse modifierStatut(
+            UUID id,
+            StatutValidation statut,
+            String commentaire,
+            UUID validateurEffectifId) {
 
         Validation validation = validationRepository.findById(id)
                 .orElseThrow(() ->
@@ -162,7 +215,15 @@ public class ValidationService {
             throw new IllegalArgumentException("Le nouveau statut doit être APPROUVEE ou REJETEE");
         }
 
+        if (validateurEffectifId != null) {
+            Utilisateur validateurEffectif = utilisateurRepository.findById(validateurEffectifId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Évaluateur connecté introuvable"));
+            validation.setValideePar(validateurEffectif);
+        }
         validation.setStatut(statut);
+        if (statut == StatutValidation.APPROUVEE) {
+            validation.getCitoyenCompetence().setEtat(odk.malicompetences.backend.competence.EtatCompetence.VALIDEE);
+        }
         validation.setCommentaire(commentaire);
         validation.setDateValidation(LocalDateTime.now());
 

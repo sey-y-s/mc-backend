@@ -16,8 +16,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 @Transactional
@@ -29,19 +33,29 @@ public class AuthService {
     private final CommuneRepository communeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final ResetPasswordTokenRepository resetTokenRepository;
+    private final CodeSender codeSender;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int VALIDITE_CODE_MINUTES = 15;
+    private static final int MAX_TENTATIVES_CODE = 5;
 
     public AuthService(UtilisateurRepository utilisateurRepository,
                        CitoyenRepository citoyenRepository,
                        OrganisationRepository organisationRepository,
                        CommuneRepository communeRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       ResetPasswordTokenRepository resetTokenRepository,
+                       CodeSender codeSender) {
         this.utilisateurRepository = utilisateurRepository;
         this.citoyenRepository = citoyenRepository;
         this.organisationRepository = organisationRepository;
         this.communeRepository = communeRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.resetTokenRepository = resetTokenRepository;
+        this.codeSender = codeSender;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -62,7 +76,7 @@ public class AuthService {
         return new LoginResponse(jwtService.generateToken(utilisateur));
     }
 
-    public void inscrire(RegisterRequest request) {
+    public LoginResponse inscrire(RegisterRequest request) {
         String telephone = NumeroTelephone.normaliser(request.telephone());
         String email = request.email() == null || request.email().isBlank()
                 ? null : request.email().trim().toLowerCase(Locale.ROOT);
@@ -112,6 +126,100 @@ public class AuthService {
             organisation.setStatut(StatutOrganisation.EN_ATTENTE);
             organisationRepository.save(organisation);
         }
+        return new LoginResponse(jwtService.generateToken(compteCree));
+    }
+
+    public void changerMotDePasse(
+            UUID authenticatedUserId,
+            ChangementMotDePasseRequest request
+    ) {
+        if (!authenticatedUserId.equals(request.utilisateurId())) {
+            throw new AccessDeniedException("Vous ne pouvez modifier que votre propre mot de passe");
+        }
+        Utilisateur utilisateur = utilisateurRepository.findById(authenticatedUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+        if (!passwordEncoder.matches(
+                request.ancienMotDePasse(), utilisateur.getPasswordHash()
+        )) {
+            throw new IllegalArgumentException("Le mot de passe actuel est incorrect");
+        }
+        if (passwordEncoder.matches(
+                request.nouveauMotDePasse(), utilisateur.getPasswordHash()
+        )) {
+            throw new IllegalArgumentException("Le nouveau mot de passe doit être différent");
+        }
+        utilisateur.setPasswordHash(passwordEncoder.encode(request.nouveauMotDePasse()));
+        utilisateurRepository.save(utilisateur);
+    }
+
+    /**
+     * Étape 1 du mot de passe oublié. Ne révèle jamais si le compte existe : la méthode se termine
+     * normalement dans tous les cas (le contrôleur répond toujours 204).
+     */
+    public void demanderReinitialisation(ForgotPasswordRequest request) {
+        Optional<Utilisateur> trouve = chercherParIdentifiant(request.identifiant());
+        if (trouve.isEmpty() || !trouve.get().isActif()) {
+            return;
+        }
+        Utilisateur utilisateur = trouve.get();
+
+        resetTokenRepository.invaliderTous(utilisateur.getId());
+
+        String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+        ResetPasswordToken jeton = new ResetPasswordToken();
+        jeton.setUtilisateurId(utilisateur.getId());
+        jeton.setCodeHash(passwordEncoder.encode(code));
+        jeton.setExpireLe(LocalDateTime.now().plusMinutes(VALIDITE_CODE_MINUTES));
+        resetTokenRepository.save(jeton);
+
+        codeSender.envoyer(utilisateur, code);
+    }
+
+    /**
+     * Étape 2 : vérifie le code puis change le mot de passe. noRollbackFor : le compteur de tentatives
+     * doit être conservé même quand le code est faux (sinon la limite de 5 essais serait contournable).
+     */
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
+    public void reinitialiser(ResetPasswordRequest request) {
+        Utilisateur utilisateur = chercherParIdentifiant(request.identifiant())
+                .orElseThrow(AuthService::codeInvalide);
+        ResetPasswordToken jeton = resetTokenRepository
+                .findFirstByUtilisateurIdAndUtiliseFalseOrderByDateCreationDesc(utilisateur.getId())
+                .orElseThrow(AuthService::codeInvalide);
+
+        if (jeton.getExpireLe().isBefore(LocalDateTime.now())
+                || jeton.getTentatives() >= MAX_TENTATIVES_CODE) {
+            throw codeInvalide();
+        }
+        if (!passwordEncoder.matches(request.code().trim(), jeton.getCodeHash())) {
+            jeton.setTentatives(jeton.getTentatives() + 1);
+            resetTokenRepository.save(jeton);
+            throw codeInvalide();
+        }
+
+        utilisateur.setPasswordHash(passwordEncoder.encode(request.motDePasse()));
+        utilisateurRepository.save(utilisateur);
+        jeton.setUtilise(true);
+        resetTokenRepository.save(jeton);
+    }
+
+    private static IllegalArgumentException codeInvalide() {
+        return new IllegalArgumentException("Code incorrect ou expiré");
+    }
+
+    /** Même logique d'identifiant que login : téléphone normalisé, sinon email en minuscules. */
+    private Optional<Utilisateur> chercherParIdentifiant(String saisie) {
+        String valeur = saisie.trim();
+        String identifiant;
+        try {
+            identifiant = NumeroTelephone.ressembleANumero(valeur)
+                    ? NumeroTelephone.normaliser(valeur)
+                    : valeur.toLowerCase(Locale.ROOT);
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+        Optional<Utilisateur> parTelephone = utilisateurRepository.findByTelephone(identifiant);
+        return parTelephone.isPresent() ? parTelephone : utilisateurRepository.findByEmail(identifiant);
     }
 
     private void verifierDonneesProfil(RegisterRequest request, Role role) {

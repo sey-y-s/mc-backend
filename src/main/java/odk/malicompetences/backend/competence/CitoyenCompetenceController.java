@@ -54,7 +54,7 @@ public class CitoyenCompetenceController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
-    @PreAuthorize("hasAnyRole('CITOYEN', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("(hasRole('CITOYEN') and #citoyenId.toString() == authentication.name) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CitoyenCompetenceResponse ajouter(

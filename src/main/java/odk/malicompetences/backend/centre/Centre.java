@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
+import odk.malicompetences.backend.utilisateur.Utilisateur;
 
 @Entity
 @Table(name = "centre")
@@ -32,4 +33,8 @@ public class Centre {
 
     @Column(length = 30)
     private String telephone;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "administrateur_id")
+    private Utilisateur administrateur;
 }

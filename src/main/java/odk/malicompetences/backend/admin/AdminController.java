@@ -4,6 +4,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import odk.malicompetences.backend.citoyen.CitoyenRepository;
+import odk.malicompetences.backend.evaluateur.EvaluateurService;
+import odk.malicompetences.backend.evaluateur.EvaluateurCentreResponse;
+import odk.malicompetences.backend.evaluateur.DesignationEvaluateurRequest;
+import org.springframework.security.core.Authentication;
 import odk.malicompetences.backend.miseenrelation.DemandeMiseEnRelationRepository;
 import odk.malicompetences.backend.opportunite.OpportuniteResponse;
 import odk.malicompetences.backend.opportunite.OpportuniteService;
@@ -54,6 +58,7 @@ public class AdminController {
     private final CompetenceRepository competenceRepository;
     private final PropositionReponseRepository propositionRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final EvaluateurService evaluateurService;
 
     public AdminController(
             CitoyenRepository citoyenRepository,
@@ -67,7 +72,8 @@ public class AdminController {
             CentreRepository centreRepository,
             CompetenceRepository competenceRepository,
             PropositionReponseRepository propositionRepository,
-            UtilisateurRepository utilisateurRepository
+            UtilisateurRepository utilisateurRepository,
+            EvaluateurService evaluateurService
     ) {
         this.citoyenRepository = citoyenRepository;
         this.organisationService = organisationService;
@@ -81,6 +87,36 @@ public class AdminController {
         this.competenceRepository = competenceRepository;
         this.propositionRepository = propositionRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.evaluateurService = evaluateurService;
+    }
+
+
+
+    @PatchMapping("/centres/{centreId}/administrateur/{utilisateurId}")
+    public java.util.Map<String, Object> definirAdministrateurCentre(
+            @PathVariable UUID centreId, @PathVariable UUID utilisateurId) {
+        Centre centre = centreRepository.findById(centreId)
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Centre introuvable"));
+        Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Utilisateur introuvable"));
+        utilisateur.setRole(Role.CENTRE_ADMIN);
+        utilisateurRepository.save(utilisateur);
+        centre.setAdministrateur(utilisateur);
+        centreRepository.save(centre);
+        return java.util.Map.of("centreId", centreId, "administrateurId", utilisateurId, "role", "CENTRE_ADMIN");
+    }
+
+    @PostMapping("/evaluateurs")
+    @ResponseStatus(HttpStatus.CREATED)
+    public EvaluateurCentreResponse designerEvaluateur(
+            @Valid @RequestBody DesignationEvaluateurRequest request,
+            Authentication authentication) {
+        return evaluateurService.designer(request, authentication.getName());
+    }
+
+    @GetMapping("/centres/{centreId}/evaluateurs")
+    public List<EvaluateurCentreResponse> evaluateursDuCentre(@PathVariable UUID centreId, Authentication authentication) {
+        return evaluateurService.listerPourCentre(centreId, authentication.getName());
     }
 
     @GetMapping("/dashboard")

@@ -43,6 +43,14 @@ public class ExperienceService {
         Set<CitoyenCompetence> competences = new HashSet<>();
         if (request.citoyenCompetenceIds() != null && !request.citoyenCompetenceIds().isEmpty()) {
             competences = new HashSet<>(citoyenCompetenceRepository.findAllById(request.citoyenCompetenceIds()));
+            if (competences.size() != request.citoyenCompetenceIds().size()
+                    || competences.stream().anyMatch(
+                            competence -> !competence.getCitoyen().getId().equals(request.citoyenId())
+                    )) {
+                throw new ResourceNotFoundException(
+                        "Une ou plusieurs compétences du citoyen sont introuvables"
+                );
+            }
         }
 
         Experience experience = experienceMapper.toEntity(request, citoyen, competences);
@@ -54,6 +62,7 @@ public class ExperienceService {
     public ExperienceResponse trouverParId(UUID id) {
         Experience experience = experienceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expérience non trouvée avec l'id : " + id));
+        verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
         return experienceMapper.toResponse(experience);
     }
 
@@ -66,8 +75,8 @@ public class ExperienceService {
 
     @Transactional(readOnly = true)
     public List<ExperienceResponse> listerParCitoyen(UUID citoyenId) {
-        return experienceRepository.findAll().stream()
-                .filter(exp -> exp.getCitoyen().getId().equals(citoyenId))
+        verifierProprietaire(citoyenId, "CITOYEN");
+        return experienceRepository.findByCitoyenId(citoyenId).stream()
                 .map(experienceMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -105,13 +114,25 @@ public class ExperienceService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Expérience introuvable"));
 
+        verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
         return experienceMapper.toResponse(experience);
     }
 
     public ExperienceResponse modifier(UUID id, ExperienceRequest request) {
+        return modifier(id, request.citoyenId(), request);
+    }
+
+    public ExperienceResponse modifier(UUID id, UUID citoyenId, ExperienceRequest request) {
         Experience experience = experienceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
         verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
+        if (!experience.getCitoyen().getId().equals(citoyenId)
+                || (request.citoyenId() != null
+                && !request.citoyenId().equals(experience.getCitoyen().getId()))) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Une expérience ne peut pas être transférée vers un autre citoyen"
+            );
+        }
 
         experience.setTitre(request.titre());
         experience.setDescription(request.description());
@@ -127,7 +148,11 @@ public class ExperienceService {
                     new HashSet<>(citoyenCompetenceRepository
                             .findAllById(request.citoyenCompetenceIds()));
 
-            if (competences.size() != request.citoyenCompetenceIds().size()) {
+            if (competences.size() != request.citoyenCompetenceIds().size()
+                    || competences.stream().anyMatch(
+                            competence -> !competence.getCitoyen().getId()
+                                    .equals(experience.getCitoyen().getId())
+                    )) {
                 throw new ResourceNotFoundException(
                         "Une ou plusieurs compétences du citoyen sont introuvables");
             }
@@ -140,11 +165,32 @@ public class ExperienceService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public ExperienceResponse trouverPourCitoyen(UUID id, UUID citoyenId) {
+        Experience experience = experienceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
+        if (!experience.getCitoyen().getId().equals(citoyenId)) {
+            throw new ResourceNotFoundException("Expérience introuvable");
+        }
+        verifierProprietaire(citoyenId, "CITOYEN");
+        return experienceMapper.toResponse(experience);
+    }
+
     public void supprimer(UUID id) {
         Experience experience = experienceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
         verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
 
+        experienceRepository.delete(experience);
+    }
+
+    public void supprimer(UUID id, UUID citoyenId) {
+        Experience experience = experienceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
+        if (!experience.getCitoyen().getId().equals(citoyenId)) {
+            throw new ResourceNotFoundException("Expérience introuvable");
+        }
+        verifierProprietaire(citoyenId, "CITOYEN");
         experienceRepository.delete(experience);
     }
 

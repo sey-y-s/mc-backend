@@ -7,6 +7,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 
 @RestController
 @RequestMapping("/api/utilisateurs")
@@ -31,10 +34,40 @@ public class UtilisateurController {
         return service.listerTous();
     }
 
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("#id.toString() == authentication.name or hasRole('SUPER_ADMIN')")
     @GetMapping("/{id}")
     public UtilisateurResponse trouverParId(@PathVariable UUID id) {
         return service.trouverParId(id);
+    }
+
+    @PreAuthorize("hasRole('CITOYEN') and #id.toString() == authentication.name")
+    @PutMapping("/{id}/contact")
+    public UtilisateurResponse modifierMesCoordonnees(
+            @PathVariable UUID id,
+            @Valid @RequestBody UtilisateurContactRequest request,
+            Authentication authentication
+    ) {
+        if (!id.toString().equals(authentication.getName())) {
+            throw new AccessDeniedException("Vous ne pouvez modifier que vos propres coordonnées");
+        }
+        return service.modifierCoordonnees(id, request);
+    }
+
+    @PreAuthorize("hasRole('CITOYEN')")
+    @GetMapping("/me/preferences")
+    public PreferencesUtilisateurRequest lireMesPreferences(Authentication authentication) {
+        return service.lireMesPreferences(UUID.fromString(authentication.getName()));
+    }
+
+    @PreAuthorize("hasRole('CITOYEN')")
+    @PutMapping("/me/preferences")
+    public PreferencesUtilisateurRequest modifierMesPreferences(
+            @Valid @RequestBody PreferencesUtilisateurRequest request,
+            Authentication authentication
+    ) {
+        return service.modifierMesPreferences(
+                UUID.fromString(authentication.getName()), request
+        );
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")

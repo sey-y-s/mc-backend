@@ -41,11 +41,13 @@ public class PortfolioRealisationService {
     public PortfolioRealisationResponse trouverParId(UUID id) {
         PortfolioRealisation portfolio = portfolioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Réalisation du portfolio non trouvée"));
+        verifierProprietaire(portfolio.getCitoyen().getId(), "CITOYEN");
         return portfolioMapper.toResponse(portfolio);
     }
 
     @Transactional(readOnly = true)
     public List<PortfolioRealisationResponse> listerParCitoyen(UUID citoyenId) {
+        verifierProprietaire(citoyenId, "CITOYEN");
         return portfolioRepository.findByCitoyenId(citoyenId).stream()
                 .map(portfolioMapper::toResponse)
                 .collect(Collectors.toList());
@@ -74,6 +76,7 @@ public class PortfolioRealisationService {
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
 
+        verifierProprietaire(realisation.getCitoyen().getId(), "CITOYEN");
         return portfolioMapper.toResponse(realisation);
     }
 

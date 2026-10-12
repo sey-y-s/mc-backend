@@ -13,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,6 +29,8 @@ class AuthServiceTest {
     private CommuneRepository communeRepository;
     private PasswordEncoder passwordEncoder;
     private JwtService jwtService;
+    private ResetPasswordTokenRepository resetTokenRepository;
+    private CodeSender codeSender;
     private AuthService service;
 
     @BeforeEach
@@ -37,8 +41,10 @@ class AuthServiceTest {
         communeRepository = mock(CommuneRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
         jwtService = mock(JwtService.class);
+        resetTokenRepository = mock(ResetPasswordTokenRepository.class);
+        codeSender = mock(CodeSender.class);
         service = new AuthService(utilisateurRepository, citoyenRepository, organisationRepository,
-                communeRepository, passwordEncoder, jwtService);
+                communeRepository, passwordEncoder, jwtService, resetTokenRepository, codeSender);
 
         when(utilisateurRepository.existsByTelephone(any())).thenReturn(false);
         when(utilisateurRepository.existsByEmail(any())).thenReturn(false);
@@ -100,5 +106,49 @@ class AuthServiceTest {
         assertEquals(odk.malicompetences.backend.organisation.StatutOrganisation.EN_ATTENTE,
                 captor.getValue().getStatut());
         verifyNoInteractions(citoyenRepository);
+    }
+
+    @Test
+    void motDePasseOublieSansCompteNeRevelePasQueLeCompteNexistePas() {
+        when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.empty());
+        when(utilisateurRepository.findByEmail(any())).thenReturn(Optional.empty());
+
+        service.demanderReinitialisation(new ForgotPasswordRequest("70000000"));
+
+        verifyNoInteractions(codeSender);
+        verifyNoInteractions(resetTokenRepository);
+    }
+
+    @Test
+    void motDePasseOublieEnvoieUnCodeASixChiffres() {
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setId(UUID.randomUUID());
+        utilisateur.setTelephone("70000000");
+        when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.of(utilisateur));
+
+        service.demanderReinitialisation(new ForgotPasswordRequest("70000000"));
+
+        verify(resetTokenRepository).invaliderTous(utilisateur.getId());
+        verify(codeSender).envoyer(eq(utilisateur), matches("\\d{6}"));
+    }
+
+    @Test
+    void codeFauxIncrementeLesTentativesEtEstRefuse() {
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setId(UUID.randomUUID());
+        utilisateur.setTelephone("70000000");
+        when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.of(utilisateur));
+        ResetPasswordToken jeton = new ResetPasswordToken();
+        jeton.setCodeHash("hash-du-code");
+        jeton.setExpireLe(LocalDateTime.now().plusMinutes(10));
+        when(resetTokenRepository.findFirstByUtilisateurIdAndUtiliseFalseOrderByDateCreationDesc(any()))
+                .thenReturn(Optional.of(jeton));
+        when(passwordEncoder.matches("000000", "hash-du-code")).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> service.reinitialiser(
+                new ResetPasswordRequest("70000000", "000000", "nouveau-mdp-123")));
+
+        assertEquals(1, jeton.getTentatives());
+        assertFalse(jeton.isUtilise());
     }
 }

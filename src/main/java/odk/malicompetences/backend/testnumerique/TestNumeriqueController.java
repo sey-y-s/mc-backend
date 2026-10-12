@@ -37,8 +37,10 @@ public class TestNumeriqueController {
     }
 
     @GetMapping("/questions/{questionId}/propositions")
-    public List<PropositionReponse> propositions(@PathVariable UUID questionId) {
-        return service.trouverPropositions(questionId);
+    public List<PropositionPubliqueResponse> propositions(@PathVariable UUID questionId) {
+        return service.trouverPropositions(questionId).stream()
+                .map(PropositionPubliqueResponse::from)
+                .toList();
     }
 
     @PreAuthorize("hasAnyRole('CITOYEN', 'ADMIN', 'SUPER_ADMIN')")

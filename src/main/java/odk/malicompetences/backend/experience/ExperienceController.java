@@ -19,7 +19,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Expériences", description = "Gestion des expériences professionnelles et bénévoles des citoyens")
 @RestController
-@RequestMapping("/api/v1/citoyens/{citoyenId}/experiences")
+@RequestMapping({
+        "/api/v1/citoyens/{citoyenId}/experiences",
+        "/api/citoyens/{citoyenId}/experiences"
+})
 public class ExperienceController {
 
     private final ExperienceService experienceService;
@@ -107,10 +110,11 @@ public class ExperienceController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ExperienceResponse> getById(
+            @PathVariable UUID citoyenId,
             @Parameter(description = "Identifiant UUID de l'expérience", required = true)
             @PathVariable UUID id) {
 
-        return ResponseEntity.ok(experienceService.getById(id));
+        return ResponseEntity.ok(experienceService.trouverPourCitoyen(id, citoyenId));
     }
 
     @Operation(
@@ -136,12 +140,13 @@ public class ExperienceController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<ExperienceResponse> modifier(
+            @PathVariable UUID citoyenId,
             @Parameter(description = "Identifiant UUID de l'expérience", required = true)
             @PathVariable UUID id,
             @Valid @RequestBody ExperienceRequest request) {
 
         return ResponseEntity.ok(
-                experienceService.modifier(id, request)
+                experienceService.modifier(id, citoyenId, request)
         );
     }
 
@@ -162,10 +167,11 @@ public class ExperienceController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> supprimer(
+            @PathVariable UUID citoyenId,
             @Parameter(description = "Identifiant UUID de l'expérience", required = true)
             @PathVariable UUID id) {
 
-        experienceService.supprimer(id);
+        experienceService.supprimer(id, citoyenId);
         return ResponseEntity.noContent().build();
     }
 

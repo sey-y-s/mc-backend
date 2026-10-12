@@ -3,6 +3,7 @@ package odk.malicompetences.backend.auth;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import odk.malicompetences.backend.citoyen.Sexe;
 import odk.malicompetences.backend.utilisateur.Role;
 
@@ -20,6 +21,7 @@ public record RegisterRequest(
 
         @NotBlank(message = "Le mot de passe est obligatoire")
         @Size(min = 8, max = 100, message = "Le mot de passe doit contenir entre 8 et 100 caractères")
+        @JsonAlias("motDePasse")
         String password,
 
         Role role,

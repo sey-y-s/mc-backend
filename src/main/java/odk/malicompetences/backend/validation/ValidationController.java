@@ -20,9 +20,9 @@ import java.util.UUID;
 
 @Tag(name = "Validations", description = "Gestion et suivi des validations de compétences des citoyens")
 @RestController
-@PreAuthorize("hasAnyRole('EVALUATEUR', 'ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 @RequestMapping(
-        "/api/v1/citoyen-competences/{citoyenCompetenceId}/validations"
+        "/api/v1/admin/citoyen-competences/{citoyenCompetenceId}/validations"
 )
 public class ValidationController {
 
@@ -36,7 +36,7 @@ public class ValidationController {
 
     @Operation(
             summary = "Créer une demande de validation",
-            description = "Crée une validation en attente. Réservé aux évaluateurs et administrateurs ; le validateur est déterminé depuis le compte authentifié."
+            description = "Route d'administration historique. Les citoyens soumettent désormais leurs demandes au centre via /api/v1/evaluateur/demandes."
     )
     @ApiResponses(value = {
             @ApiResponse(
