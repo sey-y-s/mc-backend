@@ -4,13 +4,19 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+<<<<<<< HEAD
 import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.NonNull;
+=======
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+<<<<<<< HEAD
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+=======
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -22,13 +28,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
+<<<<<<< HEAD
     // Ajout de @Lazy pour retarder l'initialisation du service de base de données au démarrage de Tomcat
     public JwtAuthenticationFilter(JwtService jwtService, @Lazy UserDetailsService userDetailsService) {
+=======
+    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
 
     @Override
+<<<<<<< HEAD
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -40,6 +51,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+=======
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
         String authorization = request.getHeader("Authorization");
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -47,6 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authorization.substring(7);
+<<<<<<< HEAD
 
         try {
             if (jwtService.isValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -62,6 +79,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
                 }
+=======
+        if (!jwtService.isValid(token) || SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(
+                    jwtService.extractUtilisateurId(token).toString());
+            if (userDetails.isEnabled()) {
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
             }
         } catch (RuntimeException ignored) {
             SecurityContextHolder.clearContext();
@@ -69,4 +101,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796

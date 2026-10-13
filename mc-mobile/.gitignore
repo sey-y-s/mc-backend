@@ -1,0 +1,73 @@
+# ==========================================
+# Flutter / Dart / Pub related
+# ==========================================
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# ==========================================
+# IDEs & Editors (IntelliJ, Android Studio, VS Code)
+# ==========================================
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+.history/
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Android specific / Gradle / NDK
+# ==========================================
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+/android/app/debug
+/android/app/profile
+/android/app/release
+*.apk
+*.aab
+
+# ==========================================
+# iOS specific / Xcode
+# ==========================================
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+xcuserdata/
+*.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+DerivedData/
+*.hmap
+*.xccheyout
+*.moved-aside
+*.xcuserstate
+.swiftpm/
+ios/Flutter/Flutter.podspec
+ios/Pods/
+
+# ==========================================
+# Security, Obfuscation & Symbols
+# ==========================================
+app.*.symbols
+app.*.map.json
+
+# ==========================================
+# Misc / Temporary
+# ==========================================
+*.class
+*.log
+*.lock
+*.pyc
+*.swp
+.widget_preview/
+migrate_working_dir/

@@ -94,7 +94,10 @@ public class AuthService {
         }
         verifierDonneesProfil(request, role);
 
+<<<<<<< HEAD
         // 1. Sauvegarde de l'utilisateur
+=======
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setTelephone(telephone);
         utilisateur.setEmail(email);
@@ -103,10 +106,17 @@ public class AuthService {
         utilisateur.setActif(true);
         Utilisateur compteCree = utilisateurRepository.save(utilisateur);
 
+<<<<<<< HEAD
         // 2. Création et liaison du profil associé
         if (role == Role.CITOYEN) {
             Citoyen citoyen = new Citoyen();
             citoyen.setUtilisateur(compteCree);
+=======
+        if (role == Role.CITOYEN) {
+            Citoyen citoyen = new Citoyen();
+            citoyen.setUtilisateur(compteCree);
+            citoyen.setId(compteCree.getId());
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
             citoyen.setCodePasseport(genererCodePasseport());
             citoyen.setNom(request.nom().trim());
             citoyen.setPrenom(request.prenom().trim());
@@ -121,14 +131,24 @@ public class AuthService {
         } else {
             Organisation organisation = new Organisation();
             organisation.setUtilisateur(compteCree);
+<<<<<<< HEAD
+=======
+            organisation.setId(compteCree.getId());
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
             organisation.setNom(request.nomOrganisation().trim());
             organisation.setDescription(request.descriptionOrganisation());
             organisation.setStatut(StatutOrganisation.EN_ATTENTE);
             organisationRepository.save(organisation);
         }
+<<<<<<< HEAD
 
         return new LoginResponse(jwtService.generateToken(compteCree));
     }
+=======
+        return new LoginResponse(jwtService.generateToken(compteCree));
+    }
+
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
     public void changerMotDePasse(
             UUID authenticatedUserId,
             ChangementMotDePasseRequest request
@@ -153,10 +173,15 @@ public class AuthService {
     }
 
     /**
+<<<<<<< HEAD
      - Étape 1 du mot de passe oublié. Ne révèle jamais si le compte existe : la méthode se termine
 
      - normalement dans tous les cas (le contrôleur répond toujours 204).
 
+=======
+     * Étape 1 du mot de passe oublié. Ne révèle jamais si le compte existe : la méthode se termine
+     * normalement dans tous les cas (le contrôleur répond toujours 204).
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
      */
     public void demanderReinitialisation(ForgotPasswordRequest request) {
         Optional<Utilisateur> trouve = chercherParIdentifiant(request.identifiant());
@@ -178,10 +203,15 @@ public class AuthService {
     }
 
     /**
+<<<<<<< HEAD
      - Étape 2 : vérifie le code puis change le mot de passe. noRollbackFor : le compteur de tentatives
 
      - doit être conservé même quand le code est faux (sinon la limite de 5 essais serait contournable).
 
+=======
+     * Étape 2 : vérifie le code puis change le mot de passe. noRollbackFor : le compteur de tentatives
+     * doit être conservé même quand le code est faux (sinon la limite de 5 essais serait contournable).
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
      */
     @Transactional(noRollbackFor = IllegalArgumentException.class)
     public void reinitialiser(ResetPasswordRequest request) {
@@ -252,4 +282,8 @@ public class AuthService {
         return "MC-" + java.time.Year.now().getValue() + "-" +
                 UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase(Locale.ROOT);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796

@@ -5,21 +5,34 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
 import odk.malicompetences.backend.portfolio.PortfolioRealisation;
 import odk.malicompetences.backend.territoire.Commune;
 
 import java.util.ArrayList;
 import java.util.List;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
 import java.util.UUID;
 
 @Entity
 @Table(name = "citoyen")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
 @Getter
 @Setter
 @NoArgsConstructor
 public class Citoyen {
 
     @Id
+<<<<<<< HEAD
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
@@ -28,6 +41,16 @@ public class Citoyen {
     private Utilisateur utilisateur;
 
     @Column(name = "code_passeport", nullable = false, unique = true, length = 14)
+=======
+    private UUID id;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId                                                      // indique que le Citoyen utilise l'id de son Utilisateur.
+    @JoinColumn(name = "id")
+    private Utilisateur utilisateur;
+
+    @Column(name = "code_passeport",nullable = false, unique = true, length = 14)
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
     private String codePasseport;
 
     @Column(nullable = false, length = 100)

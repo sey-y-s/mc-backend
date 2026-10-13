@@ -24,14 +24,29 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+<<<<<<< HEAD
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+=======
+    private final CorsConfigurationSource corsConfigurationSource;
+
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            CorsConfigurationSource corsConfigurationSource
+    ) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.corsConfigurationSource = corsConfigurationSource;
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
+<<<<<<< HEAD
             @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*,https://*.flutter.app}")
+=======
+            @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*}")
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
             String origins
     ) {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -59,13 +74,18 @@ public class SecurityConfig {
     }
 
     @Bean
+<<<<<<< HEAD
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
+=======
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+<<<<<<< HEAD
                         // Ouverture explicite des routes POST pour l'authentification et l'inscription
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/auth/**", "/api/auth/**").permitAll()
@@ -76,6 +96,11 @@ public class SecurityConfig {
                                 "/api/regions", "/api/regions/**",
                                 "/api/v1/communes", "/api/v1/communes/**",
                                 "/api/communes", "/api/communes/**").permitAll()
+=======
+                        .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/competences/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/regions/**", "/api/v1/communes/**").permitAll()
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
                         .requestMatchers(HttpMethod.GET, "/api/opportunites", "/api/opportunites/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories-opportunites", "/api/categories-opportunites/*").permitAll()
                         .anyRequest().authenticated())
@@ -87,4 +112,8 @@ public class SecurityConfig {
                 }))
                 .build();
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 24b70548ed6170cd3de9508110eb0605e8cfc796
