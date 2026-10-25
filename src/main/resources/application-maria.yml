@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    # BASE NEUVE OBLIGATOIRE : les anciennes migrations ont ete remplacees (nouveau V1). Ne pas reutiliser
+    # l'ancienne base : Flyway refuserait de demarrer (historique et checksums differents).
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/malicompetences_v1?createDatabaseIfNotExist=true}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
+        format_sql: true
+        type:
+          preferred_uuid_jdbc_type: CHAR

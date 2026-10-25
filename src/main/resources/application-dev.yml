@@ -1,0 +1,11 @@
+# Profil dev : activable avec SPRING_PROFILES_ACTIVE=mysql,dev (ou maria,dev)
+app:
+  otp:
+    sender: console
+    validite-minutes: 60
+    max-tentatives: 10
+
+logging:
+  level:
+    odk.malicompetences.backend: DEBUG
+

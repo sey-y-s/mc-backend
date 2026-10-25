@@ -1,0 +1,3 @@
+package odk.malicompetences.backend.validation;
+import odk.malicompetences.backend.common.statut.StatutDemandeValidation; import java.time.LocalDateTime; import java.util.UUID;
+public record DemandeValidationResponse(UUID id,UUID citoyenCompetenceId,String methode,UUID centreId,StatutDemandeValidation statut,String messageCitoyen,LocalDateTime creeeLe,LocalDateTime clotureeLe){ public static DemandeValidationResponse from(DemandeValidation d){return new DemandeValidationResponse(d.getId(),d.getCitoyenCompetence().getId(),d.getMethode().getCode(),d.getCentre()==null?null:d.getCentre().getId(),d.getStatut(),d.getMessageCitoyen(),d.getCreeeLe(),d.getClotureeLe());}}

@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: malicompetences-backend
+
+  profiles:
+    default: ${DB_PROFILE:mysql}   # mysql par défaut ; DB_PROFILE=maria pour MariaDB
+
+  flyway:
+    enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: ${MEDIA_MAX_FILE_SIZE:10MB}
+      max-request-size: ${MEDIA_MAX_REQUEST_SIZE:11MB}
+
+server:
+  port: 8080
+
+app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
+  media:
+    storage-directory: ${MEDIA_STORAGE_DIRECTORY:uploads/portfolio}
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION:86400000}
+  institution:
+    enabled: ${INSTITUTION_API_ENABLED:false}
+    confidentiality-reviewed: ${INSTITUTION_CONFIDENTIALITY_REVIEWED:false}
+  # --- V1.1 : parametres des regles metier (TODO-V1.1 : les lire avec @Value ou @ConfigurationProperties) ---
+  otp:
+    sender: ${OTP_SENDER:console}          # console = simulation (interdite en profil prod) ; sms/email a creer
+    validite-minutes: ${OTP_VALIDITE_MINUTES:10}
+    max-tentatives: ${OTP_MAX_TENTATIVES:5}
+  regles:
+    delai-apres-refus-jours: ${DELAI_APRES_REFUS_JOURS:30}              # mise en relation (ReglesMiseEnRelation)
+    delai-suggestion-localisation-jours: ${DELAI_SUGGESTION_LOCALISATION_JOURS:30}  # ReglesLocalisation
+    validite-competence-mois: ${VALIDITE_COMPETENCE_MOIS:}              # vide = sans expiration (EffetDecisionValidation)
+    seuil-statistique-minimal: ${SEUIL_STATISTIQUE_MINIMAL:5}           # MasquageStatistique
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
