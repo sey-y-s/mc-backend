@@ -55,8 +55,25 @@ public class CitoyenCompetence {
     @Column(nullable = false, length = 30)
     private EtatCompetence etat;
 
+    /** Secteur formel (école) ou informel (terrain) : fixe les preuves acceptées. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "parcours", length = 20)
+    private ParcoursCompetence parcours;
+
     @Column(name = "date_declaration", nullable = false)
     private LocalDateTime dateDeclaration;
+
+    /** Niveau reconnu par la dernière décision favorable (distinct du niveau déclaré). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "niveau_valide", length = 30)
+    private NiveauCompetence niveauValide;
+
+    @Column(name = "validee_le")
+    private LocalDateTime valideeLe;
+
+    /** Fin de validité de la validation (nulle : sans échéance). */
+    @Column(name = "valide_jusqu_au")
+    private java.time.LocalDate valideJusquau;
 
     @ManyToMany(mappedBy = "competences")
     private Set<Experience> experiences = new HashSet<>();

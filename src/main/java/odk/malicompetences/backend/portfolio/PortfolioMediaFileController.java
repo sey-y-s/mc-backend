@@ -9,19 +9,29 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/v1/portfolio-medias")
 public class PortfolioMediaFileController {
 
     private final PortfolioMediaStorageService storage;
+    private final PortfolioMediaAccessService accessService;
 
-    public PortfolioMediaFileController(PortfolioMediaStorageService storage) {
+    public PortfolioMediaFileController(
+            PortfolioMediaStorageService storage,
+            PortfolioMediaAccessService accessService
+    ) {
         this.storage = storage;
+        this.accessService = accessService;
     }
 
     @GetMapping("/{fileName:.+}")
-    public ResponseEntity<Resource> get(@PathVariable String fileName) {
+    public ResponseEntity<Resource> get(
+            @PathVariable String fileName,
+            Authentication authentication
+    ) {
+        accessService.verifierAcces(fileName, authentication);
         return ResponseEntity.ok()
                 .contentType(storage.contentType(fileName))
                 .header(HttpHeaders.CONTENT_DISPOSITION,

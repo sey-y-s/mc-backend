@@ -19,7 +19,7 @@ import java.util.UUID;
                         columnNames = {"besoin_id", "competence_id"}
                 )
         }
-) //
+)
 @Getter
 @Setter
 @NoArgsConstructor

@@ -4,6 +4,8 @@ import java.util.UUID;
 
 public record CitoyenCompetenceRequest(
         UUID competenceId,
-        NiveauCompetence niveau
+        NiveauCompetence niveau,
+        /** FORMEL ou INFORMEL ; facultatif pour rester compatible avec les anciens clients. */
+        ParcoursCompetence parcours
 ) {
 }

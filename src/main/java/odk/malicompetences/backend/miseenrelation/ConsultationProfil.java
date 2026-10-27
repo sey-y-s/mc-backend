@@ -2,7 +2,8 @@ package odk.malicompetences.backend.miseenrelation;
 
 import jakarta.persistence.*;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
@@ -11,7 +12,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @Table(name = "consultation_profil")
 public class ConsultationProfil {

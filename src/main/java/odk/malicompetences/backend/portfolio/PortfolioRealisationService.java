@@ -29,8 +29,9 @@ public class PortfolioRealisationService {
     }
 
     public PortfolioRealisationResponse creerPortfolio(PortfolioRealisationRequest request) {
+        verifierProprietaire(request.citoyenId(), "CITOYEN");
         Citoyen citoyen = citoyenRepository.findById(request.citoyenId())
-                .orElseThrow(() -> new RuntimeException("Citoyen non trouvé"));
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Citoyen non trouvé"));
 
         PortfolioRealisation portfolio = portfolioMapper.toEntity(request, citoyen);
         return portfolioMapper.toResponse(portfolioRepository.save(portfolio));
@@ -39,12 +40,14 @@ public class PortfolioRealisationService {
     @Transactional(readOnly = true)
     public PortfolioRealisationResponse trouverParId(UUID id) {
         PortfolioRealisation portfolio = portfolioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réalisation du portfolio non trouvée"));
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Réalisation du portfolio non trouvée"));
+        verifierProprietaire(portfolio.getCitoyen().getId(), "CITOYEN");
         return portfolioMapper.toResponse(portfolio);
     }
 
     @Transactional(readOnly = true)
     public List<PortfolioRealisationResponse> listerParCitoyen(UUID citoyenId) {
+        verifierProprietaire(citoyenId, "CITOYEN");
         return portfolioRepository.findByCitoyenId(citoyenId).stream()
                 .map(portfolioMapper::toResponse)
                 .collect(Collectors.toList());
@@ -52,17 +55,18 @@ public class PortfolioRealisationService {
 
     public PortfolioRealisationResponse modifierPortfolio(UUID id, PortfolioRealisationRequest request) {
         PortfolioRealisation portfolio = portfolioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réalisation du portfolio non trouvée"));
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Réalisation du portfolio non trouvée"));
+        verifierProprietaire(portfolio.getCitoyen().getId(), "CITOYEN");
 
         portfolioMapper.updateEntity(request, portfolio);
         return portfolioMapper.toResponse(portfolioRepository.save(portfolio));
     }
 
     public void supprimerPortfolio(UUID id) {
-        if (!portfolioRepository.existsById(id)) {
-            throw new RuntimeException("Réalisation du portfolio non trouvée");
-        }
-        portfolioRepository.deleteById(id);
+        PortfolioRealisation portfolio = portfolioRepository.findById(id)
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Réalisation du portfolio non trouvée"));
+        verifierProprietaire(portfolio.getCitoyen().getId(), "CITOYEN");
+        portfolioRepository.delete(portfolio);
     }
 
     public PortfolioRealisationResponse getById(UUID id) {
@@ -72,6 +76,7 @@ public class PortfolioRealisationService {
                                 new ResourceNotFoundException(
                                         "Réalisation introuvable"));
 
+        verifierProprietaire(realisation.getCitoyen().getId(), "CITOYEN");
         return portfolioMapper.toResponse(realisation);
     }
 
@@ -81,9 +86,8 @@ public class PortfolioRealisationService {
 
         PortfolioRealisation realisation =
                 portfolioRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Réalisation introuvable"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Réalisation introuvable"));
+        verifierProprietaire(realisation.getCitoyen().getId(), "CITOYEN");
 
         realisation.setTitre(request.titre());
         realisation.setDescription(request.description());
@@ -98,11 +102,34 @@ public class PortfolioRealisationService {
     public void supprimer(UUID id) {
         PortfolioRealisation realisation =
                  portfolioRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Réalisation introuvable"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Réalisation introuvable"));
+        verifierProprietaire(realisation.getCitoyen().getId(), "CITOYEN");
 
         portfolioRepository.delete(realisation);
     }
 
+
+    /** Vérifie directement que l'utilisateur connecté possède la ressource. */
+    private void verifierProprietaire(UUID proprietaireId, String roleAttendu) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean administrateur = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (administrateur) return;
+        boolean bonRole = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + roleAttendu));
+        boolean bonUtilisateur = false;
+        if (authentication != null && authentication.getName() != null && proprietaireId != null) {
+            try { bonUtilisateur = proprietaireId.equals(UUID.fromString(authentication.getName())); }
+            catch (IllegalArgumentException ignored) { bonUtilisateur = false; }
+        }
+        if (!bonRole || !bonUtilisateur) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé : cette ressource ne vous appartient pas.");
+        }
+    }
+
+    private boolean estAdministrateur() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    }
 }

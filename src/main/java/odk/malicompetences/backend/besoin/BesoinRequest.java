@@ -25,5 +25,14 @@ public record BesoinRequest(
 
         LocalDate dateFin,
 
-        List<BesoinCompetenceRequest> competences
-) {}
+        List<BesoinCompetenceRequest> competences,
+
+        /** Zone : territoire (région, district ou cercle) et/ou commune ; vide = national. */
+        UUID regionId,
+        UUID communeId
+) {
+    public BesoinRequest(UUID organisationId, String titre, String description, StatutBesoin statut,
+                         LocalDate dateDebut, LocalDate dateFin, List<BesoinCompetenceRequest> competences) {
+        this(organisationId, titre, description, statut, dateDebut, dateFin, competences, null, null);
+    }
+}

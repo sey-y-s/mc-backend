@@ -18,7 +18,7 @@ public class CategorieOpportunite {
     private UUID id;
 
     @Column(nullable = false)
-    private String nom; // <--- C'est ce champ qui génère setNom() et getNom()
+    private String nom;
 
     @Column(columnDefinition = "TEXT")
     private String description;

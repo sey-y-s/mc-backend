@@ -61,7 +61,11 @@ public class BesoinMapper {
                 besoin.getDateDebut(),
                 besoin.getDateFin(),
                 besoin.getDateCreation(),
-                competenceResponses
+                competenceResponses,
+                besoin.getRegion() == null ? null : besoin.getRegion().getId(),
+                besoin.getRegion() == null ? null : besoin.getRegion().getNom(),
+                besoin.getCommune() == null ? null : besoin.getCommune().getId(),
+                besoin.getCommune() == null ? null : besoin.getCommune().getNom()
         );
     }
 

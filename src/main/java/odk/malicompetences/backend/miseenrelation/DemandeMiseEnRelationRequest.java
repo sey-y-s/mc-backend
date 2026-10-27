@@ -1,5 +1,6 @@
 package odk.malicompetences.backend.miseenrelation;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -13,6 +14,7 @@ public record DemandeMiseEnRelationRequest(
         @NotNull(message = "L'ID du destinataire (citoyen) est obligatoire")
         UUID destinataireId,
 
+        @JsonAlias("SuiviBesoinTalentId")
         UUID suiviBesoinTalentId,
 
         @NotNull(message = "Le statut du contact est obligatoire")

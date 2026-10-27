@@ -15,5 +15,16 @@ public record BesoinResponse(
         LocalDate dateDebut,
         LocalDate dateFin,
         LocalDateTime dateCreation,
-        List<BesoinCompetenceResponse> competences
-) {}
+        List<BesoinCompetenceResponse> competences,
+        UUID regionId,
+        String regionNom,
+        UUID communeId,
+        String communeNom
+) {
+    public BesoinResponse(UUID id, UUID organisationId, String organisationNom, String titre, String description,
+                          StatutBesoin statut, LocalDate dateDebut, LocalDate dateFin, LocalDateTime dateCreation,
+                          List<BesoinCompetenceResponse> competences) {
+        this(id, organisationId, organisationNom, titre, description, statut, dateDebut, dateFin, dateCreation,
+                competences, null, null, null, null);
+    }
+}

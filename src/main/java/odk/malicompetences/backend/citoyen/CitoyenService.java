@@ -3,6 +3,7 @@ package odk.malicompetences.backend.citoyen;
 import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
+import odk.malicompetences.backend.utilisateur.Role;
 import odk.malicompetences.backend.territoire.Commune;
 import odk.malicompetences.backend.territoire.CommuneRepository;
 import odk.malicompetences.backend.portfolio.PortfolioMediaStorageService;
@@ -44,6 +45,9 @@ public class CitoyenService {
                         "Utilisateur introuvable"
                 ));
 
+        if (utilisateur.getRole() != Role.CITOYEN) {
+            throw new IllegalArgumentException("Le compte associé doit avoir le rôle CITOYEN");
+        }
         if (citoyenRepository.existsById(utilisateurId)) {
             throw new IllegalStateException(
                     "Le profil citoyen existe déjà"
@@ -57,7 +61,7 @@ public class CitoyenService {
         citoyen.setCodePasseport(genererCodePasseport());
         citoyen.setNom(request.nom());
         citoyen.setPrenom(request.prenom());
-        citoyen.setSexe(Sexe.valueOf(request.sexe()));
+        citoyen.setSexe(request.sexe() == null || request.sexe().isBlank() ? null : Sexe.valueOf(request.sexe()));
         citoyen.setPhotoUrl(request.photoUrl());
         citoyen.setDisponibilite(
                 request.disponibilite() != null
@@ -65,8 +69,8 @@ public class CitoyenService {
                         : Disponibilite.DISPONIBLE
         );
         if (request.communeId() != null) {
-            citoyen.setCommune(communeRepository.findById(request.communeId())
-                    .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")));
+            citoyen.definirCommuneReference(communeRepository.findById(request.communeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")), odk.malicompetences.backend.localisation.SourceLocalisation.DECLARATION);
         }
 
         return citoyenMapper.toResponse(
@@ -82,6 +86,45 @@ public class CitoyenService {
                 ));
 
         return citoyenMapper.toResponse(citoyen);
+    }
+
+    public CitoyenResponse modifierMonProfil(UUID utilisateurId, CitoyenRequest request) {
+        Citoyen citoyen = citoyenRepository.findById(utilisateurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profil citoyen introuvable"));
+        citoyen.setNom(request.nom());
+        citoyen.setPrenom(request.prenom());
+        citoyen.setSexe(request.sexe() == null || request.sexe().isBlank() ? null : Sexe.valueOf(request.sexe()));
+        citoyen.setPhotoUrl(request.photoUrl());
+        citoyen.setDisponibilite(request.disponibilite() == null ? citoyen.getDisponibilite() : request.disponibilite());
+        citoyen.definirCommuneReference(request.communeId() == null ? null : communeRepository.findById(request.communeId())
+                .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")), odk.malicompetences.backend.localisation.SourceLocalisation.DECLARATION);
+        return citoyenMapper.toResponse(citoyenRepository.save(citoyen));
+    }
+
+    public CitoyenResponse mettreAJourPhoto(UUID utilisateurId, MultipartFile fichier) {
+        Citoyen citoyen = citoyenRepository.findById(utilisateurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profil citoyen introuvable"));
+
+        String anciennePhoto = citoyen.getPhotoUrl();
+        String nouvellePhoto = mediaStorage.store(fichier, TypeMedia.IMAGE);
+        citoyen.setPhotoUrl(nouvellePhoto);
+        CitoyenResponse response = citoyenMapper.toResponse(citoyenRepository.save(citoyen));
+        if (anciennePhoto != null && !anciennePhoto.equals(nouvellePhoto)) {
+            mediaStorage.delete(anciennePhoto);
+        }
+        return response;
+    }
+
+    public CitoyenResponse supprimerPhoto(UUID utilisateurId) {
+        Citoyen citoyen = citoyenRepository.findById(utilisateurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profil citoyen introuvable"));
+        String anciennePhoto = citoyen.getPhotoUrl();
+        citoyen.setPhotoUrl(null);
+        CitoyenResponse response = citoyenMapper.toResponse(citoyenRepository.save(citoyen));
+        if (anciennePhoto != null && !anciennePhoto.isBlank()) {
+            mediaStorage.delete(anciennePhoto);
+        }
+        return response;
     }
 
     private String genererCodePasseport() {
@@ -102,31 +145,15 @@ public class CitoyenService {
 
         citoyen.setNom(request.nom());
         citoyen.setPrenom(request.prenom());
-        citoyen.setSexe(Sexe.valueOf(request.sexe()));
+        citoyen.setSexe(request.sexe() == null || request.sexe().isBlank() ? null : Sexe.valueOf(request.sexe()));
         citoyen.setPhotoUrl(request.photoUrl());
         citoyen.setDisponibilite(request.disponibilite());
-        citoyen.setCommune(request.communeId() == null ? null : communeRepository.findById(request.communeId())
-                .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")));
+        citoyen.definirCommuneReference(request.communeId() == null ? null : communeRepository.findById(request.communeId())
+                .orElseThrow(() -> new IllegalArgumentException("Commune introuvable")), odk.malicompetences.backend.localisation.SourceLocalisation.DECLARATION);
 
         Citoyen citoyenModifie = citoyenRepository.save(citoyen);
 
         return citoyenMapper.toResponse(citoyenModifie);
-    }
-
-    public CitoyenResponse mettreAJourPhoto(UUID id, MultipartFile photo) {
-        Citoyen citoyen = citoyenRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Citoyen introuvable"));
-        String anciennePhoto = citoyen.getPhotoUrl();
-        String nouvellePhoto = mediaStorage.store(photo, TypeMedia.IMAGE);
-        citoyen.setPhotoUrl(nouvellePhoto);
-        try {
-            Citoyen citoyenModifie = citoyenRepository.save(citoyen);
-            mediaStorage.delete(anciennePhoto);
-            return citoyenMapper.toResponse(citoyenModifie);
-        } catch (RuntimeException exception) {
-            mediaStorage.delete(nouvellePhoto);
-            throw exception;
-        }
     }
 
 }

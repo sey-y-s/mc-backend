@@ -19,6 +19,15 @@ public record ValidationResponse(
         StatutValidation statut,
         LocalDateTime dateValidation,
         String commentaire,
-        LocalDate dateExpiration
+        LocalDate dateExpiration,
+        odk.malicompetences.backend.competence.NiveauCompetence niveauValide,
+        UUID decisionCorrigeeId
 ) {
+    public ValidationResponse(UUID id, UUID citoyenCompetenceId, UUID preuveId, UUID valideeParId,
+                              String valideeParTelephone, UUID centreId, String centreNom, TypeValidation type,
+                              StatutValidation statut, LocalDateTime dateValidation, String commentaire,
+                              LocalDate dateExpiration) {
+        this(id, citoyenCompetenceId, preuveId, valideeParId, valideeParTelephone, centreId, centreNom, type,
+                statut, dateValidation, commentaire, dateExpiration, null, null);
+    }
 }

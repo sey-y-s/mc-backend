@@ -10,6 +10,12 @@ public interface CitoyenCompetenceRepository
 
     List<CitoyenCompetence> findByCitoyenId(UUID citoyenId);
 
+    boolean existsByCitoyenIdAndEtatNot(UUID citoyenId, EtatCompetence etat);
+
+    List<CitoyenCompetence> findByEtat(EtatCompetence etat);
+
+    boolean existsByCompetence_Id(UUID competenceId);
+
     boolean existsByCitoyenIdAndCompetenceId(
             UUID citoyenId,
             UUID competenceId

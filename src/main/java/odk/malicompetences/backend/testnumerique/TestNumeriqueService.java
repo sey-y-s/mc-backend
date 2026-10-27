@@ -27,6 +27,7 @@ public class TestNumeriqueService {
     private final CitoyenRepository citoyenRepository;
     private final CitoyenCompetenceRepository citoyenCompetenceRepository;
     private final PreuveRepository preuveRepository;
+    private final odk.malicompetences.backend.parcours.ReglesModaliteService reglesModalite;
 
     public TestNumeriqueService(TestNumeriqueRepository testRepository,
                                 QuestionRepository questionRepository,
@@ -34,7 +35,8 @@ public class TestNumeriqueService {
                                 ResultatTestRepository resultatRepository,
                                 CitoyenRepository citoyenRepository,
                                 CitoyenCompetenceRepository citoyenCompetenceRepository,
-                                PreuveRepository preuveRepository) {
+                                PreuveRepository preuveRepository,
+                                odk.malicompetences.backend.parcours.ReglesModaliteService reglesModalite) {
         this.testRepository = testRepository;
         this.questionRepository = questionRepository;
         this.propositionRepository = propositionRepository;
@@ -42,6 +44,7 @@ public class TestNumeriqueService {
         this.citoyenRepository = citoyenRepository;
         this.citoyenCompetenceRepository = citoyenCompetenceRepository;
         this.preuveRepository = preuveRepository;
+        this.reglesModalite = reglesModalite;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +62,22 @@ public class TestNumeriqueService {
     public List<Question> trouverQuestions(UUID testId) {
         trouver(testId);
         return questionRepository.findByTestIdOrderByOrdreAsc(testId);
+    }
+
+    @Transactional(readOnly = true)
+    public TestNumeriqueResponse trouverReponse(UUID id) {
+        return TestNumeriqueResponse.from(trouver(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<TestNumeriqueResponse> trouverReponsesPourCompetence(UUID competenceId) {
+        return testRepository.findByCompetenceIdAndActifTrue(competenceId).stream()
+                .map(TestNumeriqueResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuestionResponse> trouverQuestionsReponse(UUID testId) {
+        return trouverQuestions(testId).stream().map(QuestionResponse::from).toList();
     }
 
     @Transactional(readOnly = true)
@@ -94,15 +113,25 @@ public class TestNumeriqueService {
 
         BigDecimal score = scored == 0 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(correct * 100.0 / scored).setScale(2, RoundingMode.HALF_UP);
-        boolean reussi = score.compareTo(BigDecimal.valueOf(60)) >= 0;
+        // Seuil de réussite fixé par les règles de la compétence (60 % par défaut).
+        int seuil = reglesModalite.seuilReussiteTest(test.getCompetence().getId());
+        boolean reussi = score.compareTo(BigDecimal.valueOf(seuil)) >= 0;
 
-        Preuve preuve = new Preuve();
-        preuve.setCitoyenCompetence(competence);
-        preuve.setType(TypePreuve.TEST_NUMERIQUE);
-        preuve.setTitre("Résultat du test : " + test.getTitre());
-        preuve.setDescription("Score obtenu : " + score + " %");
-        preuve.setDateDepot(LocalDateTime.now());
-        preuve = preuveRepository.save(preuve);
+        // Seul un test réussi (60 % ou plus) devient une preuve jointe à la compétence du citoyen.
+        Preuve preuve = null;
+        if (reussi) {
+            preuve = new Preuve();
+            preuve.setCitoyenCompetence(competence);
+            preuve.setType(TypePreuve.TEST_NUMERIQUE);
+            preuve.setTitre("Test réussi : " + test.getTitre());
+            preuve.setDescription("Score obtenu : " + score + " %");
+            preuve.setDateDepot(LocalDateTime.now());
+            preuve = preuveRepository.save(preuve);
+            if (competence.getEtat() == odk.malicompetences.backend.competence.EtatCompetence.DECLAREE) {
+                competence.setEtat(odk.malicompetences.backend.competence.EtatCompetence.ATTESTEE);
+                citoyenCompetenceRepository.save(competence);
+            }
+        }
 
         ResultatTest resultat = new ResultatTest();
         resultat.setTest(test);

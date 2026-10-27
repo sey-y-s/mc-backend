@@ -2,13 +2,14 @@ package odk.malicompetences.backend.opportunite;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/categories-opportunites")
+@RequestMapping("/api/v1/categories-opportunites")
 public class CategorieOpportuniteController {
 
     private final CategorieOpportuniteService service;
@@ -18,6 +19,7 @@ public class CategorieOpportuniteController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public CategorieOpportuniteResponse creer(@Valid @RequestBody CategorieOpportuniteRequest request) {
         return service.creer(request);
@@ -34,6 +36,7 @@ public class CategorieOpportuniteController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void supprimer(@PathVariable UUID id) {
         service.supprimer(id);

@@ -14,7 +14,11 @@ public class CitoyenCompetenceMapper {
                 citoyenCompetence.getCompetence().getNom(),
                 citoyenCompetence.getNiveau(),
                 citoyenCompetence.getEtat(),
-                citoyenCompetence.getDateDeclaration()
+                citoyenCompetence.getDateDeclaration(),
+                citoyenCompetence.getParcours(),
+                ParcoursCompetence.preuvesDeposables(citoyenCompetence.getParcours()),
+                citoyenCompetence.getPreuves() == null ? 0 : citoyenCompetence.getPreuves().size(),
+                citoyenCompetence.getCompetence().getParcoursAutorises()
         );
     }
 }

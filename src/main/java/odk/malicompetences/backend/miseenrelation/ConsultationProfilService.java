@@ -19,28 +19,31 @@ public class ConsultationProfilService {
     private final ConsultationProfilRepository consultationRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CitoyenRepository citoyenRepository;
+    private final odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletudeService;
 
     public ConsultationProfilService(
             ConsultationProfilRepository consultationRepository,
             UtilisateurRepository utilisateurRepository,
-            CitoyenRepository citoyenRepository
+            CitoyenRepository citoyenRepository,
+            odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletudeService
     ) {
         this.consultationRepository = consultationRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.citoyenRepository = citoyenRepository;
+        this.profilCompletudeService = profilCompletudeService;
     }
 
     public ConsultationProfilResponse enregistrerConsultation(ConsultationProfilRequest request) {
         Utilisateur utilisateur = utilisateurRepository.findById(request.utilisateurId())
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Utilisateur non trouvé"));
         Citoyen citoyen = citoyenRepository.findById(request.citoyenId())
-                .orElseThrow(() -> new RuntimeException("Citoyen non trouvé"));
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Citoyen non trouvé"));
+        profilCompletudeService.exigerVisible(citoyen);
 
         ConsultationProfil consultation = new ConsultationProfil();
-        // Si les getters/setters manquent sur l'entité ConsultationProfil fournie, assurez-vous d'ajouter Lombok ou les méthodes set/get.
-        // consultation.setUtilisateur(utilisateur);
-        // consultation.setCitoyen(citoyen);
-        // consultation.setDateConsultation(LocalDateTime.now());
+        consultation.setUtilisateur(utilisateur);
+        consultation.setCitoyen(citoyen);
+        consultation.setDateConsultation(LocalDateTime.now());
 
         ConsultationProfil saved = consultationRepository.save(consultation);
 

@@ -6,9 +6,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/regions")
+@RequestMapping("/api/v1/regions")
 public class RegionController {
 
     private final RegionService service;
@@ -16,6 +17,8 @@ public class RegionController {
     public RegionController(RegionService service) {
         this.service = service;
     }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -33,10 +36,19 @@ public class RegionController {
         return service.trouverParId(id);
     }
 
+    /** Cercles d'une région (le district de Bamako n'en a pas). */
+    @GetMapping("/{id}/cercles")
+    public List<RegionResponse> cercles(@PathVariable UUID id) {
+        return service.listerCercles(id);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/{id}")
     public RegionResponse modifier(@PathVariable UUID id, @Valid @RequestBody RegionRequest request) {
         return service.modifierRegion(id, request);
     }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

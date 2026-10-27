@@ -1,7 +1,8 @@
 package odk.malicompetences.backend.opportunite;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -9,7 +10,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @Table(name = "opportunite")
 public class Opportunite {
@@ -41,4 +43,21 @@ public class Opportunite {
 
     @Column(name = "date_expiration")
     private LocalDate dateExpiration;
+
+    /** Localité concernée : région (et commune facultative). Vide = tout le Mali. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "region_id")
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
+    private odk.malicompetences.backend.territoire.Region region;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "commune_id")
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
+    private odk.malicompetences.backend.territoire.Commune commune;
+
+    /** Date d'envoi de l'alerte aux citoyens de la localité (une seule fois). */
+    @Column(name = "date_diffusion")
+    private java.time.LocalDateTime dateDiffusion;
 }

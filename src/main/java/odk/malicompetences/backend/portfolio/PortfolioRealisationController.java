@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Portfolio Réalisations", description = "Gestion du portfolio de réalisations concrètes des citoyens")
 @RestController

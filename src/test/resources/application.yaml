@@ -1,0 +1,9 @@
+# Secret réservé aux tests; ne jamais réutiliser en déploiement.
+app:
+  security:
+    jwt:
+      secret: test-only-secret-never-use-in-production-2026
+      expiration: 86400000
+  institution:
+    enabled: false
+    confidentiality-reviewed: false

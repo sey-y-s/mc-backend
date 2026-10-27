@@ -1,0 +1,7 @@
+# Profil de production : à activer avec  --spring.profiles.active=prod,mysql
+# JWT_SECRET et SUPER_ADMIN_PASSWORD deviennent obligatoires.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

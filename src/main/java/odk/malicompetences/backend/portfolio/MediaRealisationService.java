@@ -31,13 +31,13 @@ public class MediaRealisationService {
     ) {
         PortfolioRealisation realisation =
                 realisationRepository.findById(realisationId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Réalisation introuvable"
-                        ));
+                        .orElseThrow(() -> new IllegalArgumentException("Réalisation introuvable"));
+        verifierProprietaire(realisation.getCitoyen().getId(), "CITOYEN");
 
         MediaRealisation media = new MediaRealisation();
 
         media.setPortfolioRealisation(realisation);
+        verifierProprietaire(media.getPortfolioRealisation().getCitoyen().getId(), "CITOYEN");
         media.setType(request.type());
         media.setUrl(request.urlMedia());
         media.setNomFichier(request.legende());
@@ -49,6 +49,9 @@ public class MediaRealisationService {
     public List<MediaRealisationResponse> trouverParRealisation(
             UUID realisationId
     ) {
+        PortfolioRealisation realisation = realisationRepository.findById(realisationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Réalisation introuvable"));
+        verifierProprietaire(realisation.getCitoyen().getId(), "CITOYEN");
         return repository
                 .findByPortfolioRealisationId(realisationId)
                 .stream()
@@ -56,10 +59,12 @@ public class MediaRealisationService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public MediaRealisationResponse getById(UUID id) {
         MediaRealisation media = repository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Média introuvable"));
+        verifierProprietaire(media.getPortfolioRealisation().getCitoyen().getId(), "CITOYEN");
 
         return mapper.toResponse(media, media.getPortfolioRealisation().getId());
     }
@@ -72,6 +77,7 @@ public class MediaRealisationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Média introuvable"));
 
+        verifierProprietaire(media.getPortfolioRealisation().getCitoyen().getId(), "CITOYEN");
         media.setType(request.type());
         media.setUrl(request.urlMedia());
         media.setNomFichier(request.legende());
@@ -86,6 +92,31 @@ public class MediaRealisationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Média introuvable"));
 
+        verifierProprietaire(media.getPortfolioRealisation().getCitoyen().getId(), "CITOYEN");
         repository.delete(media);
+    }
+
+    /** Vérifie directement que l'utilisateur connecté possède la ressource. */
+    private void verifierProprietaire(UUID proprietaireId, String roleAttendu) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean administrateur = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (administrateur) return;
+        boolean bonRole = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + roleAttendu));
+        boolean bonUtilisateur = false;
+        if (authentication != null && authentication.getName() != null && proprietaireId != null) {
+            try { bonUtilisateur = proprietaireId.equals(UUID.fromString(authentication.getName())); }
+            catch (IllegalArgumentException ignored) { bonUtilisateur = false; }
+        }
+        if (!bonRole || !bonUtilisateur) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé : cette ressource ne vous appartient pas.");
+        }
+    }
+
+    private boolean estAdministrateur() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 }

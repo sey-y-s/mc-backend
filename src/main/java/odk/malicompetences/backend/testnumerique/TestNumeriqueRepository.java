@@ -6,4 +6,5 @@ import java.util.UUID;
 
 public interface TestNumeriqueRepository extends JpaRepository<TestNumerique, UUID> {
     List<TestNumerique> findByCompetenceIdAndActifTrue(UUID competenceId);
+    boolean existsByCompetence_Id(UUID competenceId);
 }

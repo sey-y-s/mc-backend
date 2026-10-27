@@ -36,12 +36,21 @@ public class ExperienceService {
     }
 
     public ExperienceResponse creerExperience(ExperienceRequest request) {
+        verifierProprietaire(request.citoyenId(), "CITOYEN");
         Citoyen citoyen = citoyenRepository.findById(request.citoyenId())
-                .orElseThrow(() -> new RuntimeException("Citoyen non trouvé avec l'id : " + request.citoyenId()));
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Citoyen non trouvé avec l'id : " + request.citoyenId()));
 
         Set<CitoyenCompetence> competences = new HashSet<>();
         if (request.citoyenCompetenceIds() != null && !request.citoyenCompetenceIds().isEmpty()) {
             competences = new HashSet<>(citoyenCompetenceRepository.findAllById(request.citoyenCompetenceIds()));
+            if (competences.size() != request.citoyenCompetenceIds().size()
+                    || competences.stream().anyMatch(
+                            competence -> !competence.getCitoyen().getId().equals(request.citoyenId())
+                    )) {
+                throw new ResourceNotFoundException(
+                        "Une ou plusieurs compétences du citoyen sont introuvables"
+                );
+            }
         }
 
         Experience experience = experienceMapper.toEntity(request, citoyen, competences);
@@ -50,66 +59,24 @@ public class ExperienceService {
     }
 
     @Transactional(readOnly = true)
-    public ExperienceResponse trouverParId(UUID id) {
-        Experience experience = experienceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Expérience non trouvée avec l'id : " + id));
-        return experienceMapper.toResponse(experience);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ExperienceResponse> listerToutes() {
-        return experienceRepository.findAll().stream()
-                .map(experienceMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
     public List<ExperienceResponse> listerParCitoyen(UUID citoyenId) {
-        return experienceRepository.findAll().stream()
-                .filter(exp -> exp.getCitoyen().getId().equals(citoyenId))
+        verifierProprietaire(citoyenId, "CITOYEN");
+        return experienceRepository.findByCitoyenId(citoyenId).stream()
                 .map(experienceMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public ExperienceResponse modifierExperience(UUID id, ExperienceRequest request) {
+    public ExperienceResponse modifier(UUID id, UUID citoyenId, ExperienceRequest request) {
         Experience experience = experienceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Expérience non trouvée avec l'id : " + id));
-
-        Citoyen citoyen = null;
-        if (request.citoyenId() != null) {
-            citoyen = citoyenRepository.findById(request.citoyenId())
-                    .orElseThrow(() -> new RuntimeException("Citoyen non trouvé avec l'id : " + request.citoyenId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
+        verifierProprietaire(experience.getCitoyen().getId(), "CITOYEN");
+        if (!experience.getCitoyen().getId().equals(citoyenId)
+                || (request.citoyenId() != null
+                && !request.citoyenId().equals(experience.getCitoyen().getId()))) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Une expérience ne peut pas être transférée vers un autre citoyen"
+            );
         }
-
-        Set<CitoyenCompetence> competences = null;
-        if (request.citoyenCompetenceIds() != null) {
-            competences = new HashSet<>(citoyenCompetenceRepository.findAllById(request.citoyenCompetenceIds()));
-        }
-
-        experienceMapper.updateEntity(request, experience, citoyen, competences);
-        Experience updated = experienceRepository.save(experience);
-        return experienceMapper.toResponse(updated);
-    }
-
-    public void supprimerExperience(UUID id) {
-        if (!experienceRepository.existsById(id)) {
-            throw new RuntimeException("Expérience non trouvée avec l'id : " + id);
-        }
-        experienceRepository.deleteById(id);
-    }
-
-    public ExperienceResponse getById(UUID id) {
-        Experience experience = experienceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expérience introuvable"));
-
-        return experienceMapper.toResponse(experience);
-    }
-
-    public ExperienceResponse modifier(UUID id, ExperienceRequest request) {
-        Experience experience = experienceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expérience introuvable"));
 
         experience.setTitre(request.titre());
         experience.setDescription(request.description());
@@ -125,7 +92,11 @@ public class ExperienceService {
                     new HashSet<>(citoyenCompetenceRepository
                             .findAllById(request.citoyenCompetenceIds()));
 
-            if (competences.size() != request.citoyenCompetenceIds().size()) {
+            if (competences.size() != request.citoyenCompetenceIds().size()
+                    || competences.stream().anyMatch(
+                            competence -> !competence.getCitoyen().getId()
+                                    .equals(experience.getCitoyen().getId())
+                    )) {
                 throw new ResourceNotFoundException(
                         "Une ou plusieurs compétences du citoyen sont introuvables");
             }
@@ -138,12 +109,49 @@ public class ExperienceService {
         );
     }
 
-    public void supprimer(UUID id) {
+    @Transactional(readOnly = true)
+    public ExperienceResponse trouverPourCitoyen(UUID id, UUID citoyenId) {
         Experience experience = experienceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expérience introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
+        if (!experience.getCitoyen().getId().equals(citoyenId)) {
+            throw new ResourceNotFoundException("Expérience introuvable");
+        }
+        verifierProprietaire(citoyenId, "CITOYEN");
+        return experienceMapper.toResponse(experience);
+    }
 
+    public void supprimer(UUID id, UUID citoyenId) {
+        Experience experience = experienceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Expérience introuvable"));
+        if (!experience.getCitoyen().getId().equals(citoyenId)) {
+            throw new ResourceNotFoundException("Expérience introuvable");
+        }
+        verifierProprietaire(citoyenId, "CITOYEN");
         experienceRepository.delete(experience);
     }
 
+
+    /** Vérifie directement que l'utilisateur connecté possède la ressource. */
+    private void verifierProprietaire(UUID proprietaireId, String roleAttendu) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean administrateur = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (administrateur) return;
+        boolean bonRole = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + roleAttendu));
+        boolean bonUtilisateur = false;
+        if (authentication != null && authentication.getName() != null && proprietaireId != null) {
+            try { bonUtilisateur = proprietaireId.equals(UUID.fromString(authentication.getName())); }
+            catch (IllegalArgumentException ignored) { bonUtilisateur = false; }
+        }
+        if (!bonRole || !bonUtilisateur) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé : cette ressource ne vous appartient pas.");
+        }
+    }
+
+    private boolean estAdministrateur() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    }
 }

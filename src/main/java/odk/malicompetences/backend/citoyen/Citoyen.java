@@ -54,10 +54,45 @@ public class Citoyen {
     @Column(nullable = false, length = 30)
     private Disponibilite disponibilite = Disponibilite.DISPONIBLE;
 
+    /**
+     * Consentement à la détection ponctuelle de la commune par GPS (consignes V1.2) :
+     * aucune coordonnée n'est conservée, seule la commune de référence l'est.
+     */
+    @Column(name = "gps_consenti", nullable = false)
+    private boolean gpsConsenti = false;
+
+    @Column(name = "gps_consenti_le")
+    private java.time.LocalDateTime gpsConsentiLe;
+
+    /** Origine de la commune de référence : DECLARATION, GPS_CONFIRMEE ou ADMINISTRATION. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "localisation_source", length = 20)
+    private odk.malicompetences.backend.localisation.SourceLocalisation localisationSource;
+
+    @Column(name = "localisation_confirmee_le")
+    private java.time.LocalDateTime localisationConfirmeeLe;
+
     @OneToMany(
             mappedBy = "citoyen",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
     private List<PortfolioRealisation> portfolioRealisations = new ArrayList<>();
+
+    /**
+     * Change la commune de référence en traçant son origine. La date de confirmation n'est
+     * mise à jour que si la commune change réellement.
+     */
+    public void definirCommuneReference(Commune nouvelle, odk.malicompetences.backend.localisation.SourceLocalisation source) {
+        java.util.UUID avant = commune == null ? null : commune.getId();
+        java.util.UUID apres = nouvelle == null ? null : nouvelle.getId();
+        this.commune = nouvelle;
+        if (nouvelle == null) {
+            this.localisationSource = null;
+            this.localisationConfirmeeLe = null;
+        } else if (!java.util.Objects.equals(avant, apres) || localisationSource == null) {
+            this.localisationSource = source;
+            this.localisationConfirmeeLe = java.time.LocalDateTime.now();
+        }
+    }
 }

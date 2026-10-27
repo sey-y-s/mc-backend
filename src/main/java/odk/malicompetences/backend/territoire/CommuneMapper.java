@@ -1,7 +1,5 @@
 package odk.malicompetences.backend.territoire;
-
 import org.springframework.stereotype.Component;
-
 import java.util.UUID;
 
 @Component
@@ -34,7 +32,9 @@ public class CommuneMapper {
                 commune.getId(),
                 regionId,
                 regionNom,
-                commune.getNom()
+                commune.getNom(),
+                commune.getCercle() == null ? null : commune.getCercle().getId(),
+                commune.getCercle() == null ? null : commune.getCercle().getNom()
         );
     }
 }

@@ -5,5 +5,9 @@ public enum TypeValidation {
     PARTENAIRE_ATTESTE,
     VALIDATION_PRATIQUE,
     TEST_NUMERIQUE,
-    VAE
+    VAE,
+    /** Analyse à distance du portfolio de réalisations par un jury habilité. */
+    PORTFOLIO_MEDIA,
+    /** Observation du savoir-faire sur le terrain par un maître artisan référent habilité. */
+    MAITRE_ARTISAN
 }

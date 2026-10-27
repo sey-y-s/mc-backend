@@ -2,6 +2,7 @@ package odk.malicompetences.backend.notification;
 
 import odk.malicompetences.backend.utilisateur.Utilisateur;
 import odk.malicompetences.backend.utilisateur.UtilisateurRepository;
+import odk.malicompetences.backend.common.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +39,7 @@ public class NotificationService {
 
         for (UUID utilisateurId : request.destinatairesIds()) {
             Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'id : " + utilisateurId));
+                    .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Utilisateur non trouvé avec l'id : " + utilisateurId));
 
             NotificationDestinataire destinataire = notificationMapper.toDestinataireEntity(savedNotification, utilisateur);
             notificationDestinataireRepository.save(destinataire);
@@ -48,7 +49,8 @@ public class NotificationService {
     // Récupérer toutes les notifications d'un utilisateur
     @Transactional(readOnly = true)
     public List<NotificationResponse> recupererNotificationsParUtilisateur(UUID utilisateurId) {
-        return notificationDestinataireRepository.findByUtilisateurIdOrderByDateReceptionDesc(utilisateurId).stream()
+        return notificationDestinataireRepository.findAll().stream()
+                .filter(nd -> nd.getUtilisateur().getId().equals(utilisateurId))
                 .map(notificationMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -56,17 +58,24 @@ public class NotificationService {
     // Récupérer uniquement les notifications non lues d'un utilisateur
     @Transactional(readOnly = true)
     public List<NotificationResponse> recupererNotificationsNonLues(UUID utilisateurId) {
-        return notificationDestinataireRepository
-                .findByUtilisateurIdAndLuFalseOrderByDateReceptionDesc(utilisateurId).stream()
+        return notificationDestinataireRepository.findAll().stream()
+                .filter(nd -> nd.getUtilisateur().getId().equals(utilisateurId) && Boolean.FALSE.equals(nd.getLu()))
                 .map(notificationMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     // Marquer une notification comme lue
-    public NotificationResponse marquerCommeLue(UUID notificationDestinataireId, UUID utilisateurId) {
-        NotificationDestinataire nd = notificationDestinataireRepository
-                .findByIdAndUtilisateurId(notificationDestinataireId, utilisateurId)
-                .orElseThrow(() -> new RuntimeException("Notification destinataire non trouvée avec l'id : " + notificationDestinataireId));
+    public NotificationResponse marquerCommeLue(
+            UUID notificationDestinataireId,
+            UUID authenticatedUserId,
+            boolean administrateur
+    ) {
+        NotificationDestinataire nd = (administrateur
+                ? notificationDestinataireRepository.findById(notificationDestinataireId)
+                : notificationDestinataireRepository.findByIdAndUtilisateurId(
+                        notificationDestinataireId, authenticatedUserId
+                )).orElseThrow(() ->
+                new ResourceNotFoundException("Notification destinataire introuvable"));
 
         if (Boolean.FALSE.equals(nd.getLu())) {
             nd.setLu(true);

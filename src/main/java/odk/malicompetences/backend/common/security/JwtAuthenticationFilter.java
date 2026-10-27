@@ -25,31 +25,60 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Les requêtes préliminaires CORS ne doivent pas être traitées
+        // comme des requêtes métier nécessitant un token JWT.
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
+    }
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+
         String authorization = request.getHeader("Authorization");
+
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authorization.substring(7);
-        if (!jwtService.isValid(token) || SecurityContextHolder.getContext().getAuthentication() != null) {
+
+        // Si une authentification existe déjà, ne pas la remplacer.
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
+            if (!jwtService.isValid(token)) {
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             UserDetails userDetails = userDetailsService.loadUserByUsername(
-                    jwtService.extractUtilisateurId(token).toString());
+                    jwtService.extractUtilisateurId(token).toString()
+            );
+
             if (userDetails.isEnabled()) {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
+            } else {
+                SecurityContextHolder.clearContext();
             }
-        } catch (RuntimeException ignored) {
+
+        } catch (RuntimeException ex) {
             SecurityContextHolder.clearContext();
         }
 

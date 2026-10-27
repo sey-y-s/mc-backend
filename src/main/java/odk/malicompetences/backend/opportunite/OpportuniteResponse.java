@@ -13,5 +13,12 @@ public record OpportuniteResponse(
         StatutOpportunite statut,
         TypeOpportunite type,
         LocalDateTime datePublication,
-        LocalDate dateExpiration
+        LocalDate dateExpiration,
+        UUID regionId,
+        String regionNom,
+        UUID communeId,
+        String communeNom,
+        /** « Bamako · Commune IV », « Région de Ségou » ou « Tout le Mali ». */
+        String localite,
+        long nombreCandidatures
 ) {}

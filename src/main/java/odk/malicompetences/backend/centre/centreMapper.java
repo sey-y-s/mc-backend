@@ -3,7 +3,7 @@ package odk.malicompetences.backend.centre;
 import org.springframework.stereotype.Component;
 
 @Component
-public class centreMapper {
+public class CentreMapper {
 
     // Convertit un DTO Request en Entité JPA
     public Centre toEntity(CentreRequest request) {
@@ -29,16 +29,18 @@ public class centreMapper {
     }
 
     // Convertit une Entité JPA en DTO Response
-    public CenterResponse toResponse(Centre centre) {
+    public CentreResponse toResponse(Centre centre) {
         if (centre == null) {
             return null;
         }
-        return new CenterResponse(
+        return new CentreResponse(
                 centre.getId(),
                 centre.getNom(),
                 centre.getDescription(),
                 centre.getAdresse(),
-                centre.getTelephone()
+                centre.getTelephone(),
+                centre.getStatut(),
+                centre.getAdministrateur() == null ? null : centre.getAdministrateur().getId()
         );
     }
 }

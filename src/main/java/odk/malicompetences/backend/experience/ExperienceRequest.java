@@ -1,5 +1,6 @@
 package odk.malicompetences.backend.experience;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -7,6 +8,7 @@ import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record ExperienceRequest(
         @NotNull(message = "L'ID du citoyen est obligatoire")
         UUID citoyenId,

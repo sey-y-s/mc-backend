@@ -34,13 +34,13 @@ public class CategorieOpportuniteService {
     @Transactional(readOnly = true)
     public CategorieOpportuniteResponse trouverParId(UUID id) {
         CategorieOpportunite cat = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Catégorie d'opportunité non trouvée avec l'id : " + id));
+                .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Catégorie d'opportunité non trouvée avec l'id : " + id));
         return mapper.toResponse(cat);
     }
 
     public void supprimer(UUID id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Catégorie non trouvée avec l'id : " + id);
+            throw new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Catégorie non trouvée avec l'id : " + id);
         }
         repository.deleteById(id);
     }

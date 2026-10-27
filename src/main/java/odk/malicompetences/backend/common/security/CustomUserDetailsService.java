@@ -13,8 +13,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UtilisateurRepository utilisateurRepository;
 
-    public CustomUserDetailsService(UtilisateurRepository utilisateurRepository) {
+    private final odk.malicompetences.backend.utilisateur.RoleEffectif roleEffectif;
+
+    public CustomUserDetailsService(UtilisateurRepository utilisateurRepository,
+                                    odk.malicompetences.backend.utilisateur.RoleEffectif roleEffectif) {
         this.utilisateurRepository = utilisateurRepository;
+        this.roleEffectif = roleEffectif;
     }
 
     @Override
@@ -26,7 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .username(utilisateur.getId().toString())
                 .password(utilisateur.getPasswordHash())
                 .disabled(!utilisateur.isActif())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + utilisateur.getRole().name())))
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + roleEffectif.de(utilisateur).name())))
                 .build();
     }
 }

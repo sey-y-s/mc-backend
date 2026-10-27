@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import odk.malicompetences.backend.common.exception.ApiError;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,7 @@ import java.util.UUID;
 
 @Tag(name = "Validations", description = "Gestion et suivi des validations de compétences des citoyens")
 @RestController
+@PreAuthorize("hasAnyRole('EVALUATEUR', 'ADMIN', 'SUPER_ADMIN')")
 @RequestMapping(
         "/api/v1/citoyen-competences/{citoyenCompetenceId}/validations"
 )
@@ -33,7 +36,7 @@ public class ValidationController {
 
     @Operation(
             summary = "Créer une demande de validation",
-            description = "Soumet une nouvelle demande de validation (par les pairs, centre d'évaluation, ou superviseur) pour une compétence d'un citoyen."
+            description = "Crée une validation en attente. Réservé aux évaluateurs et administrateurs ; le validateur est déterminé depuis le compte authentifié."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -56,10 +59,11 @@ public class ValidationController {
     @ResponseStatus(HttpStatus.CREATED)
     public ValidationResponse creer(
             @Parameter(description = "Identifiant UUID de la compétence du citoyen", required = true)
-            @Valid @RequestBody ValidationRequest request
+            @Valid @RequestBody ValidationRequest request,
+            Authentication authentication
     ) {
         return validationService.creerValidation(
-                request
+                request, authentication.getName()
         );
     }
 
@@ -116,7 +120,7 @@ public class ValidationController {
 
     @Operation(
             summary = "Modifier le statut d'une validation",
-            description = "Met à jour le statut d'une validation (EN_ATTENTE, VALIDEE, REJETEE) avec un commentaire optionnel."
+            description = "Décide une validation en attente : APPROUVEE ou REJETEE. Une décision ne peut pas être modifiée via cet endpoint."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -143,9 +147,7 @@ public class ValidationController {
 
         return ResponseEntity.ok(
                 validationService.modifierStatut(
-                        id,
-                        request.statut(),
-                        request.commentaire()
+                        id, request.statut(), request.commentaire()
                 )
         );
     }

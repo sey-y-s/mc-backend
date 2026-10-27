@@ -6,6 +6,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface BesoinRepository extends JpaRepository<Besoin, UUID> {
-    long countByOrganisationIdAndStatut(UUID organisationId, StatutBesoin statut);
-    List<Besoin> findByOrganisationId(UUID organisationId);
+    List<Besoin> findAllByOrganisationId(UUID organisationId);
+    long countByOrganisation_IdAndStatut(UUID organisationId, StatutBesoin statut);
 }

@@ -2,8 +2,14 @@ spring:
   application:
     name: malicompetences-backend
 
+  profiles:
+    default: ${DB_PROFILE:mysql}   # mysql par défaut ; DB_PROFILE=maria pour MariaDB
+
   flyway:
     enabled: true
+    # Historique propre : V1 = schéma, V2 et suivantes = données de référence. Les données de démonstration
+    # (db/dev-data) ne sont chargées qu'avec le profil « dev ». Toute évolution = un NOUVEAU fichier Vn.
+    locations: classpath:db/migration
 
   servlet:
     multipart:
@@ -14,13 +20,31 @@ server:
   port: 8080
 
 app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
   media:
     storage-directory: ${MEDIA_STORAGE_DIRECTORY:uploads/portfolio}
   security:
     jwt:
-#      secret: ${JWT_SECRET}
-      secret: 4f9xK2mP7vR8zL1wQ3sT6fY0hD5bN9jX2cV4kB8nM6p
-      expiration: ${JWT_EXPIRATION:86400000}
+      secret: ${JWT_SECRET:}
+      # Accès de courte durée (1 h) ; la session est prolongée par le jeton de renouvellement (30 jours).
+      expiration: ${JWT_EXPIRATION:3600000}
+      refresh-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:30}
+  otp:
+    # Simulation : le code est affiché dans la console du serveur (remplacer par une passerelle SMS/email).
+    sender: ${OTP_SENDER:log}
+    validite-minutes: ${OTP_VALIDITE_MINUTES:10}
+    max-tentatives: ${OTP_MAX_TENTATIVES:5}
+  localisation:
+    # Aucune position GPS n'est stockée : la position sert une fois à trouver la commune, puis est oubliée.
+    delai-apres-refus-jours: ${LOCALISATION_DELAI_APRES_REFUS_JOURS:30}
+    expiration-suggestion-jours: ${LOCALISATION_EXPIRATION_SUGGESTION_JOURS:30}
+    distance-max-km: ${LOCALISATION_DISTANCE_MAX_KM:60}
+  mise-en-relation:
+    delai-apres-refus-jours: ${MISE_EN_RELATION_DELAI_APRES_REFUS_JOURS:30}
+  institution:
+    enabled: ${INSTITUTION_API_ENABLED:false}
+    confidentiality-reviewed: ${INSTITUTION_CONFIDENTIALITY_REVIEWED:false}
 
 springdoc:
   api-docs:

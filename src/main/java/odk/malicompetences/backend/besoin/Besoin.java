@@ -23,7 +23,7 @@ public class Besoin {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organisation_id", nullable = false)
-    private Organisation organisation; // <--- Génère setOrganisation() et getOrganisation()
+    private Organisation organisation;
 
     @Column(nullable = false)
     private String titre;
@@ -32,10 +32,30 @@ public class Besoin {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    private StatutBesoin statut; // Adaptez le type d'enum si nécessaire
+    private StatutBesoin statut;
 
     private LocalDate dateDebut;
     private LocalDate dateFin;
 
     private LocalDateTime dateCreation;
+
+    /** Lieu de la demande (facultatif ; à défaut, position de l'organisation), en degrés décimaux WGS84. */
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    /**
+     * Zone géographique du besoin : une commune, ou un territoire (région, district ou cercle).
+     * Sans zone, le besoin est national. Pour les statistiques, un besoin est compté une seule fois,
+     * dans sa zone la plus précise.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "region_id")
+    private odk.malicompetences.backend.territoire.Region region;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "commune_id")
+    private odk.malicompetences.backend.territoire.Commune commune;
 }

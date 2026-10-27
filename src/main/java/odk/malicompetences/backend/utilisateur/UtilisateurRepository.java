@@ -2,12 +2,12 @@ package odk.malicompetences.backend.utilisateur;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface UtilisateurRepository
         extends JpaRepository<Utilisateur, UUID> {
-    Optional<Utilisateur> findByRole(Role role);
 
     Optional<Utilisateur> findByTelephone(String telephone);
 
@@ -16,4 +16,6 @@ public interface UtilisateurRepository
     boolean existsByTelephone(String telephone);
 
     boolean existsByEmail(String email);
+
+    Optional<Utilisateur> findByRole(Role role);
 }

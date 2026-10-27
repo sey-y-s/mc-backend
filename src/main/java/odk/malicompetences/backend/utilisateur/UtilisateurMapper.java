@@ -13,6 +13,8 @@ public class UtilisateurMapper {
         utilisateur.setEmail(request.email());
         utilisateur.setPasswordHash(encodedPassword);
         utilisateur.setRole(request.role());
+        // Compte ouvert par un administrateur : il se porte garant du contact, pas de code OTP à saisir.
+        utilisateur.setTelephoneVerifieLe(java.time.LocalDateTime.now());
 
         if (request.actif() != null) {
             utilisateur.setActif(request.actif());

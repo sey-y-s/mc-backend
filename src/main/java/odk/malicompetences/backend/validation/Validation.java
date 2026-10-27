@@ -2,7 +2,8 @@ package odk.malicompetences.backend.validation;
 
 import jakarta.persistence.*;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import odk.malicompetences.backend.centre.Centre;
 import odk.malicompetences.backend.competence.CitoyenCompetence;
@@ -14,7 +15,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "validation")
 @NoArgsConstructor
 public class Validation {
@@ -47,6 +49,9 @@ public class Validation {
     @Column(nullable = false, length = 30)
     private StatutValidation statut;
 
+    @Column(name = "date_demande", nullable = false, updatable = false)
+    private LocalDateTime dateDemande;
+
     @Column(name = "date_validation")
     private LocalDateTime dateValidation;
 
@@ -55,4 +60,24 @@ public class Validation {
 
     @Column(name = "date_expiration")
     private LocalDate dateExpiration;
+
+    /** Niveau reconnu par la décision (une décision favorable fixe le niveau validé de la compétence). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "niveau_valide", length = 30)
+    private odk.malicompetences.backend.competence.NiveauCompetence niveauValide;
+
+    /**
+     * Décision corrigée par celle-ci (contestation acceptée). Les décisions ne sont jamais modifiées :
+     * toute correction est une nouvelle décision qui référence l'ancienne.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "decision_corrigee_id")
+    private Validation decisionCorrigee;
+
+    @PrePersist
+    protected void onCreate() {
+        if (dateDemande == null) {
+            dateDemande = LocalDateTime.now();
+        }
+    }
 }
