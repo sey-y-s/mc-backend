@@ -9,7 +9,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 @RestController
-@PreAuthorize("hasAnyRole('ORGANISATION', 'ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('CITOYEN', 'ORGANISATION', 'ADMIN', 'SUPER_ADMIN')")
 @RequestMapping("/api/v1/talents")
 public class TalentRechercheController {
 
