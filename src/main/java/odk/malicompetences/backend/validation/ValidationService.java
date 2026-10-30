@@ -30,7 +30,14 @@ public class ValidationService {
     private final PreuveRepository preuveRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CentreRepository centreRepository;
-    private final ValidationMapper validationMapper;
+        private final ValidationMapper validationMapper;
+    private odk.malicompetences.backend.notification.NotificationService notificationService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setNotificationService(odk.malicompetences.backend.notification.NotificationService notificationService) {
+        this.notificationService = notificationService;
+    }
+
 
     public ValidationService(
             ValidationRepository validationRepository,
@@ -200,10 +207,12 @@ public class ValidationService {
         validation.setStatut(statut);
         validation.setCommentaire(commentaire);
         validation.setDateValidation(LocalDateTime.now());
-        if (statut == StatutValidation.APPROUVEE) {
+                if (statut == StatutValidation.APPROUVEE) {
             appliquerDecisionFavorable(validation, niveauValide);
         }
-        return validationMapper.toResponse(validationRepository.save(validation));
+        Validation enregistree = validationRepository.save(validation);
+        prevenirLeCitoyen(enregistree, statut, commentaire);
+        return validationMapper.toResponse(enregistree);
     }
 
     /**
@@ -245,6 +254,25 @@ public class ValidationService {
             citoyenCompetenceRepository.save(cc);
         }
         return validationRepository.save(nouvelle);
+    }
+
+        /** Le citoyen est toujours prévenu d'une décision (le test numérique envoie son propre message). */
+    private void prevenirLeCitoyen(Validation validation, StatutValidation statut, String commentaire) {
+        if (notificationService == null || validation.getType() == TypeValidation.TEST_NUMERIQUE) {
+            return;
+        }
+        var cc = validation.getCitoyenCompetence();
+        String nom = cc.getCompetence() == null ? "votre compétence" : "« " + cc.getCompetence().getNom() + " »";
+        boolean approuvee = statut == StatutValidation.APPROUVEE;
+        String message = approuvee
+                ? "Bonne nouvelle : la compétence " + nom + " est validée."
+                : "Votre demande pour la compétence " + nom + " n'a pas été retenue"
+                        + (commentaire == null || commentaire.isBlank() ? "." : " : " + commentaire.trim())
+                        + " Vous pouvez soumettre un autre justificatif ou contester la décision.";
+        notificationService.creerEtEnvoyerNotification(new odk.malicompetences.backend.notification.NotificationRequest(
+                approuvee ? "Compétence validée" : "Demande de validation refusée", message,
+                odk.malicompetences.backend.notification.TypeNotification.VALIDATION,
+                                java.util.List.of(cc.getCitoyen().getId()), validation.getId()));
     }
 
     /** Compétence VALIDEE = niveau validé + date de validation + décision favorable cohérente. */

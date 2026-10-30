@@ -68,6 +68,13 @@ public class AdminController {
     private odk.malicompetences.backend.utilisateur.RoleEffectif roleEffectif;
     private odk.malicompetences.backend.centre.CentreCompetenceRepository agrements;
 
+    private odk.malicompetences.backend.validation.ValidationRepository validationRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void setValidationRepository(odk.malicompetences.backend.validation.ValidationRepository validationRepository) {
+        this.validationRepository = validationRepository;
+    }
+
     @org.springframework.beans.factory.annotation.Autowired
     void setAgrements(odk.malicompetences.backend.centre.CentreCompetenceRepository agrements) {
         this.agrements = agrements;
@@ -202,11 +209,24 @@ public class AdminController {
     @GetMapping("/validations")
     public List<ValidationAdminResponse> validations() {
         return validationService.listerToutes().stream()
-                .map(item -> new ValidationAdminResponse(
-                        item.id(),
-                        item.type().name(),
-                        "Compétence " + item.citoyenCompetenceId(),
-                        item.statut().name()))
+                .map(item -> {
+                    var validation = validationRepository == null ? null : validationRepository.findById(item.id()).orElse(null);
+                    var citoyen = validation == null ? null : validation.getCitoyenCompetence().getCitoyen();
+                    var competenceNom = validation == null ? null : validation.getCitoyenCompetence().getCompetence().getNom();
+                    var preuve = validation == null ? null : validation.getPreuve();
+                    String libelle = competenceNom == null ? "Compétence " + item.citoyenCompetenceId()
+                            : competenceNom + (citoyen == null ? "" : " — " + citoyen.getPrenom() + " " + citoyen.getNom());
+                    return new ValidationAdminResponse(
+                            item.id(),
+                            item.type().name(),
+                            libelle,
+                            item.statut().name(),
+                            preuve == null ? null : preuve.getTitre(),
+                            preuve == null ? null : preuve.getFichierUrl(),
+                            item.centreNom(),
+                            validation == null ? null : validation.getDateDemande(),
+                            item.commentaire());
+                })
                 .toList();
     }
 
@@ -420,7 +440,11 @@ public class AdminController {
         }
     }
 
-    public record ValidationAdminResponse(UUID id, String type, String libelle, String statut) {}
+    public record ValidationAdminResponse(
+            UUID id, String type, String libelle, String statut,
+            String preuveTitre, String preuveUrl, String centreNom,
+            java.time.LocalDateTime dateDemande, String commentaire
+    ) {}
 
     public record TestAdminResponse(
             UUID id, UUID competenceId, String titre, String description, String statut,

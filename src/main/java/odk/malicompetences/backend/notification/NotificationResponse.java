@@ -12,5 +12,6 @@ public record NotificationResponse(
         Boolean lu,
         LocalDateTime dateReception,
         LocalDateTime dateLecture,
-        LocalDateTime dateCreation
+                LocalDateTime dateCreation,
+        UUID referenceId
 ) {}

@@ -13,5 +13,9 @@ public record DemandeMiseEnRelationResponse(
         StatutContact statut,
         String message,
         LocalDateTime dateDemande,
-        LocalDateTime dateReponse
-) {}
+        LocalDateTime dateReponse,
+        /** Coordonnées de l'autre personne : renseignées seulement une fois la mise en relation acceptée. */
+        Contact contact
+) {
+    public record Contact(String telephone, String email) {}
+}

@@ -110,8 +110,11 @@ public class LocalisationCitoyenService {
                     "Activez la détection de votre commune pour utiliser votre position.", null);
         }
         Commune detectee = rechercheCommune.trouver(position.latitude(), position.longitude()).orElse(null);
-        UUID reference = c.getCommune() == null ? null : c.getCommune().getId();
-        UUID detecteeId = detectee == null ? null : detectee.getId();
+                // La détection se fait à l'échelle de la RÉGION : les communes d'une même ville sont distantes de quelques
+        // kilomètres et une position approchée tomberait dans la mauvaise. Une région différente seulement
+        // déclenche une proposition ; le citoyen choisit lui-même sa commune.
+        UUID reference = c.getCommune() == null || c.getCommune().getRegion() == null ? null : c.getCommune().getRegion().getId();
+        UUID detecteeId = detectee == null || detectee.getRegion() == null ? null : detectee.getRegion().getId();
         LocalDateTime maintenant = LocalDateTime.now();
         Duration delai = Duration.ofDays(delaiApresRefusJours);
 
@@ -120,10 +123,10 @@ public class LocalisationCitoyenService {
                 ReglesLocalisation.evaluer(true, false, reference, detecteeId, null, maintenant, delai);
         if (premiere == ReglesLocalisation.Decision.COMMUNE_INCONNUE) {
             return new Detection(ResultatDetection.COMMUNE_INCONNUE,
-                    "Votre commune n'a pas pu être déterminée. Vous pouvez la choisir vous-même.", null);
+                    "Votre région n'a pas pu être déterminée. Vous pouvez choisir votre commune vous-même.", null);
         }
         if (premiere == ReglesLocalisation.Decision.RIEN_A_FAIRE) {
-            return new Detection(ResultatDetection.IDENTIQUE, "Votre commune de référence est à jour.", null);
+            return new Detection(ResultatDetection.IDENTIQUE, "Vous êtes toujours dans la région de votre commune de référence.", null);
         }
         // 2e passe : la commune a changé, on regarde les demandes existantes (les trop anciennes expirent d'abord).
         expirerSiTropAncienne(citoyenId);
@@ -146,7 +149,7 @@ public class LocalisationCitoyenService {
         d.setDateCreation(LocalDateTime.now());
         d = demandeRepository.save(d);
         return new Detection(ResultatDetection.SUGGESTION_CREEE,
-                "Vous semblez être à " + detectee.getNom() + ". Voulez-vous en faire votre commune de référence ?",
+                "Vous semblez être en région " + detectee.getRegion().getNom() + ". Choisissez votre commune dans cette région si vous avez déménagé.",
                 suggestion(d));
     }
 

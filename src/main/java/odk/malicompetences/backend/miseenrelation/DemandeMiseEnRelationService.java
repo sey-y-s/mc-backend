@@ -26,7 +26,9 @@ public class DemandeMiseEnRelationService {
     private final CitoyenRepository citoyenRepository;
     private final SuiviBesoinTalentRepository SuiviBesoinTalentRepository;
     private final DemandeMiseEnRelationMapper mapper;
-    private final odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletudeService;
+        private final odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletudeService;
+        private final odk.malicompetences.backend.notification.NotificationService notificationService;
+    private final odk.malicompetences.backend.organisation.OrganisationRepository organisations;
 
     public DemandeMiseEnRelationService(
             DemandeMiseEnRelationRepository demandeRepository,
@@ -34,26 +36,45 @@ public class DemandeMiseEnRelationService {
             CitoyenRepository citoyenRepository,
             SuiviBesoinTalentRepository SuiviBesoinTalentRepository,
             DemandeMiseEnRelationMapper mapper,
-            odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletudeService
+                        odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletudeService,
+                        odk.malicompetences.backend.notification.NotificationService notificationService,
+            odk.malicompetences.backend.organisation.OrganisationRepository organisations
     ) {
         this.demandeRepository = demandeRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.citoyenRepository = citoyenRepository;
         this.SuiviBesoinTalentRepository = SuiviBesoinTalentRepository;
         this.mapper = mapper;
-        this.profilCompletudeService = profilCompletudeService;
+                this.profilCompletudeService = profilCompletudeService;
+                this.notificationService = notificationService;
+        this.organisations = organisations;
     }
 
     // Créer une demande de mise en relation
     public DemandeMiseEnRelationResponse creerDemande(DemandeMiseEnRelationRequest request) {
-        verifierProprietaire(request.demandeurId(), "ORGANISATION");
+                // La demande est toujours faite au nom du compte connecté : on ne peut pas écrire « de la part d'un autre ».
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (!estAdministrateur() && (auth == null || !auth.getName().equals(request.demandeurId().toString()))) {
+            throw new org.springframework.security.access.AccessDeniedException("Vous ne pouvez envoyer une demande qu'en votre nom.");
+        }
         Utilisateur demandeur = utilisateurRepository.findById(request.demandeurId())
                 .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Utilisateur demandeur non trouvé avec l'id : " + request.demandeurId()));
 
         Citoyen destinataire = citoyenRepository.findById(request.destinataireId())
                 .orElseThrow(() -> new odk.malicompetences.backend.common.exception.ResourceNotFoundException("Citoyen destinataire non trouvé avec l'id : " + request.destinataireId()));
-        profilCompletudeService.exigerVisible(destinataire);
-
+                        profilCompletudeService.exigerVisible(destinataire);
+        organisations.findById(demandeur.getId()).ifPresent(organisation -> {
+            if (organisation.getStatut() != odk.malicompetences.backend.organisation.StatutOrganisation.APPROUVEE) {
+                throw new IllegalStateException("Votre organisation n'est pas encore approuvée : vous pourrez rechercher et contacter des talents dès son approbation.");
+            }
+        });
+        // Entre citoyens, la mise en relation n'existe qu'entre profils complets : l'émetteur doit l'être aussi.
+        citoyenRepository.findById(demandeur.getId()).ifPresent(emetteur -> {
+            if (!profilCompletudeService.estVisible(emetteur)) {
+                throw new IllegalStateException("Complétez votre passeport (photo, commune, compétence avec preuve) "
+                        + "pour contacter un talent.");
+            }
+        });
         SuiviBesoinTalent SuiviBesoinTalent = null;
         if (request.suiviBesoinTalentId() != null) {
             SuiviBesoinTalent = SuiviBesoinTalentRepository.findById(request.suiviBesoinTalentId())
@@ -87,8 +108,14 @@ public class DemandeMiseEnRelationService {
         DemandeMiseEnRelation demande = mapper.toEntity(request, demandeur, destinataire, SuiviBesoinTalent);
         demande.setStatut(StatutContact.EN_ATTENTE);
         demande.setDateReponse(null);
-        DemandeMiseEnRelation savedDemande = demandeRepository.save(demande);
-        return mapper.toResponse(savedDemande);
+                DemandeMiseEnRelation savedDemande = demandeRepository.save(demande);
+        // Le destinataire est prévenu dans ses alertes (l'identité du demandeur reste masquée tant qu'il n'a pas accepté).
+        notificationService.creerEtEnvoyerNotification(new odk.malicompetences.backend.notification.NotificationRequest(
+                "Nouvelle demande de mise en relation",
+                "Un profil souhaite entrer en contact avec vous. Ouvrez la demande pour accepter ou refuser.",
+                odk.malicompetences.backend.notification.TypeNotification.MISE_EN_RELATION,
+                                List.of(destinataire.getId()), savedDemande.getId()));
+        return mapper.toResponse(savedDemande, demandeur.getId());
     }
 
     // Consulter une demande par son ID
@@ -99,10 +126,10 @@ public class DemandeMiseEnRelationService {
         if (!estAdministrateur()) {
             var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth == null || (!demande.getDemandeur().getId().toString().equals(auth.getName()) && !demande.getDestinataire().getId().toString().equals(auth.getName()))) {
-                throw new org.springframework.security.access.AccessDeniedException("Accès refusé");
+                                throw new org.springframework.security.access.AccessDeniedException("Accès refusé");
             }
         }
-        return mapper.toResponse(demande);
+        return mapper.toResponse(demande, idConnecte());
     }
 
     // Lister toutes les demandes
@@ -119,10 +146,10 @@ public class DemandeMiseEnRelationService {
         var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         UUID moi = UUID.fromString(auth.getName());
         boolean citoyen = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CITOYEN"));
-        List<DemandeMiseEnRelation> demandes = citoyen
-                ? demandeRepository.findByDestinataire_IdOrderByDateDemandeDesc(moi)
+                List<DemandeMiseEnRelation> demandes = citoyen
+                ? demandeRepository.findByDemandeur_IdOrDestinataire_IdOrderByDateDemandeDesc(moi, moi)
                 : demandeRepository.findByDemandeur_IdOrderByDateDemandeDesc(moi);
-        return demandes.stream().map(mapper::toResponse).collect(Collectors.toList());
+        return demandes.stream().map(d -> mapper.toResponse(d, moi)).collect(Collectors.toList());
     }
 
     /** L'organisation retire une demande encore en attente. */
@@ -152,12 +179,24 @@ public class DemandeMiseEnRelationService {
         if (auth == null || !demande.getDestinataire().getId().toString().equals(auth.getName())) {
             throw new org.springframework.security.access.AccessDeniedException("Cette demande ne vous est pas adressée.");
         }
-        if (demande.getStatut() != StatutContact.EN_ATTENTE) {
+                if (demande.getStatut() != StatutContact.EN_ATTENTE) {
             throw new IllegalStateException("Vous avez déjà répondu à cette demande.");
         }
-        demande.setStatut(statut);
+        if (!profilCompletudeService.estVisible(demande.getDestinataire())) {
+            throw new IllegalStateException("Complétez votre passeport pour répondre à une mise en relation.");
+        }
+                demande.setStatut(statut);
         demande.setDateReponse(java.time.LocalDateTime.now());
-        return mapper.toResponse(demandeRepository.save(demande));
+        DemandeMiseEnRelation enregistree = demandeRepository.save(demande);
+        // Le demandeur est prévenu de la réponse.
+        boolean acceptee = statut == StatutContact.ACCEPTEE;
+        notificationService.creerEtEnvoyerNotification(new odk.malicompetences.backend.notification.NotificationRequest(
+                acceptee ? "Mise en relation acceptée" : "Mise en relation refusée",
+                acceptee ? "Votre demande a été acceptée : vous pouvez maintenant voir le profil et les coordonnées de cette personne."
+                        : "Votre demande de mise en relation n'a pas été acceptée.",
+                odk.malicompetences.backend.notification.TypeNotification.MISE_EN_RELATION,
+                                List.of(demande.getDemandeur().getId()), demande.getId()));
+        return mapper.toResponse(enregistree, demande.getDestinataire().getId());
     }
 
     // Modifier ou mettre à jour le statut d'une demande
@@ -201,6 +240,15 @@ public class DemandeMiseEnRelationService {
         }
         if (!bonRole || !bonUtilisateur) {
             throw new org.springframework.security.access.AccessDeniedException("Accès refusé : cette ressource ne vous appartient pas.");
+        }
+    }
+
+        private UUID idConnecte() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        try {
+            return auth == null ? null : UUID.fromString(auth.getName());
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 

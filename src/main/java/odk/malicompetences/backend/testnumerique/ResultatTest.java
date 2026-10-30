@@ -32,4 +32,8 @@ public class ResultatTest {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "preuve_id", unique = true)
     private Preuve preuve;
+
+    /** Non enregistré : vrai quand ce test réussi a validé la compétence (parcours « test numérique »). */
+    @Transient
+    private boolean competenceValidee;
 }

@@ -20,6 +20,7 @@ public class DemandeMiseEnRelationController {
 
     // Créer
     @PostMapping
+    @PreAuthorize("hasAnyRole('CITOYEN', 'ORGANISATION')")
     @ResponseStatus(HttpStatus.CREATED)
     public DemandeMiseEnRelationResponse creer(@Valid @RequestBody DemandeMiseEnRelationRequest request) {
         return service.creerDemande(request);
@@ -47,7 +48,7 @@ public class DemandeMiseEnRelationController {
     }
 
     // L'organisation retire sa demande tant qu'elle est en attente
-    @PreAuthorize("hasRole('ORGANISATION')")
+        @PreAuthorize("hasAnyRole('CITOYEN', 'ORGANISATION')")
     @PatchMapping("/{id}/annulation")
     public DemandeMiseEnRelationResponse annuler(@PathVariable UUID id) {
         return service.annuler(id);

@@ -15,7 +15,10 @@ import java.util.UUID;
 public interface ValidationRepository
         extends JpaRepository<Validation, UUID> {
 
-    List<Validation> findByCentreIdAndStatut(UUID centreId, StatutValidation statut);
+        List<Validation> findByCentreIdAndStatut(UUID centreId, StatutValidation statut);
+
+    /** Décisions déjà rendues pour un centre (historique de l'évaluateur). */
+    List<Validation> findByCentreIdAndStatutNot(UUID centreId, StatutValidation statut);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from Validation v where v.id = :id")

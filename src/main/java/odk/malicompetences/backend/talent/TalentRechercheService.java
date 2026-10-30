@@ -33,7 +33,10 @@ public class TalentRechercheService {
     private final BesoinRepository besoinRepository;
     private final BesoinCompetenceRepository besoinCompetenceRepository;
     private final PortfolioRealisationRepository portfolioRealisationRepository;
-    private final ProfilCompletudeService profilCompletudeService;
+        private final ProfilCompletudeService profilCompletudeService;
+    private final odk.malicompetences.backend.miseenrelation.DemandeMiseEnRelationRepository relations;
+        private final odk.malicompetences.backend.portfolio.PortfolioRealisationMapper portfolioMapper;
+    private final odk.malicompetences.backend.organisation.OrganisationRepository organisations;
 
     public TalentRechercheService(
             CitoyenRepository citoyenRepository,
@@ -41,14 +44,20 @@ public class TalentRechercheService {
             BesoinRepository besoinRepository,
             BesoinCompetenceRepository besoinCompetenceRepository,
             PortfolioRealisationRepository portfolioRealisationRepository,
-            ProfilCompletudeService profilCompletudeService
+                        ProfilCompletudeService profilCompletudeService,
+            odk.malicompetences.backend.miseenrelation.DemandeMiseEnRelationRepository relations,
+                        odk.malicompetences.backend.portfolio.PortfolioRealisationMapper portfolioMapper,
+            odk.malicompetences.backend.organisation.OrganisationRepository organisations
     ) {
         this.citoyenRepository = citoyenRepository;
         this.citoyenCompetenceRepository = citoyenCompetenceRepository;
         this.besoinRepository = besoinRepository;
         this.besoinCompetenceRepository = besoinCompetenceRepository;
         this.portfolioRealisationRepository = portfolioRealisationRepository;
-        this.profilCompletudeService = profilCompletudeService;
+                this.profilCompletudeService = profilCompletudeService;
+        this.relations = relations;
+                this.portfolioMapper = portfolioMapper;
+        this.organisations = organisations;
     }
 
     public List<TalentRechercheResponse> rechercher(
@@ -62,8 +71,28 @@ public class TalentRechercheService {
     }
 
     /** Recherche filtrée ; si {@code size} est fourni, renvoie la page demandée (page commence à 0). */
-    public List<TalentRechercheResponse> rechercher(TalentFiltres filtres, Integer page, Integer size) {
+        public List<TalentRechercheResponse> rechercher(TalentFiltres filtres, Integer page, Integer size) {
+        return rechercher(filtres, page, size, null);
+    }
+
+    /**
+     * Recherche faite par un citoyen : il ne se trouve jamais lui-même, et un profil incomplet ne peut pas chercher
+     * (il n'est pas visible des autres, il ne voit pas non plus les autres).
+     */
+        public List<TalentRechercheResponse> rechercher(TalentFiltres filtres, Integer page, Integer size, UUID chercheurCitoyenId) {
+        return rechercher(filtres, page, size, chercheurCitoyenId, null);
+    }
+
+    /** utilisateurId : compte qui cherche (citoyen ou organisation) ; ses contacts établis ne sont plus anonymes. */
+    public List<TalentRechercheResponse> rechercher(TalentFiltres filtres, Integer page, Integer size,
+                                                    UUID chercheurCitoyenId, UUID utilisateurId) {
+                exigerOrganisationApprouvee(utilisateurId);
+        java.util.Set<UUID> contacts = contacts(utilisateurId);
+        if (chercheurCitoyenId != null) {
+            exigerChercheurComplet(chercheurCitoyenId);
+        }
         List<Citoyen> trouves = citoyenRepository.findAll().stream()
+                .filter(citoyen -> chercheurCitoyenId == null || !citoyen.getId().equals(chercheurCitoyenId))
                 .filter(profilCompletudeService::estVisible)
                 .filter(citoyen -> matches(citoyen, filtres))
                 .sorted(Comparator.comparing(citoyen -> citoyen.getId().toString()))
@@ -73,8 +102,75 @@ public class TalentRechercheService {
             int fin = Math.min(debut + size, trouves.size());
             trouves = trouves.subList(debut, fin);
         }
-        return trouves.stream().map(this::toResponse).toList();
+                return trouves.stream().map(c -> toResponse(c, contacts)).toList();
     }
+
+        /** Un citoyen dont le profil est incomplet ne peut pas rechercher de talents. */
+    public void exigerChercheurComplet(UUID citoyenId) {
+        citoyenRepository.findById(citoyenId).ifPresent(chercheur -> {
+            if (!profilCompletudeService.estVisible(chercheur)) {
+                throw new IllegalStateException("Complétez votre passeport (photo, commune, compétence avec preuve) "
+                        + "pour rechercher des talents.");
+            }
+        });
+    }
+
+        public TalentRechercheResponse trouverParId(UUID id, UUID chercheurCitoyenId) {
+        return trouverParId(id, chercheurCitoyenId, null);
+    }
+
+        public TalentRechercheResponse trouverParId(UUID id, UUID chercheurCitoyenId, UUID utilisateurId) {
+        exigerOrganisationApprouvee(utilisateurId);
+        if (chercheurCitoyenId != null) {
+            if (chercheurCitoyenId.equals(id)) {
+                throw new ResourceNotFoundException("Profil talent introuvable.");
+            }
+            exigerChercheurComplet(chercheurCitoyenId);
+        }
+                Citoyen citoyen = citoyenRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Profil talent introuvable."));
+        profilCompletudeService.exigerVisible(citoyen);
+        return toResponse(citoyen, contacts(utilisateurId));
+    }
+
+    /**
+     * Profil complet d'une personne avec qui une mise en relation a été acceptée. Rien n'est révélé à un tiers :
+     * sans mise en relation acceptée (ou sans être administrateur), le profil n'existe pas.
+     */
+    public ProfilContactResponse profilDuContact(UUID talentId, UUID moi, boolean administrateur) {
+        Citoyen citoyen = citoyenRepository.findById(talentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profil introuvable."));
+        if (!administrateur && !contacts(moi).contains(talentId)) {
+            throw new ResourceNotFoundException("Profil introuvable.");
+        }
+        Commune commune = citoyen.getCommune();
+        return new ProfilContactResponse(citoyen.getId(), citoyen.getPrenom(), citoyen.getNom(), citoyen.getPhotoUrl(),
+                commune == null ? null : commune.getNom(),
+                commune == null ? null : commune.getRegion().getNom(),
+                citoyen.getDisponibilite(),
+                toResponse(citoyen, java.util.Set.of(talentId)).competences(),
+                portfolioRealisationRepository.findByCitoyenId(talentId).stream().map(portfolioMapper::toResponse).toList());
+    }
+
+        /**
+     * Une organisation doit être approuvée par l'administration avant de chercher ou de contacter des citoyens.
+     * Sans ligne « organisation » (citoyen, administrateur), aucune restriction.
+     */
+    public void exigerOrganisationApprouvee(UUID utilisateurId) {
+        if (utilisateurId == null) {
+            return;
+        }
+        organisations.findById(utilisateurId).ifPresent(organisation -> {
+            if (organisation.getStatut() != odk.malicompetences.backend.organisation.StatutOrganisation.APPROUVEE) {
+                throw new IllegalStateException("Votre organisation n'est pas encore approuvée : vous pourrez rechercher et contacter des talents dès son approbation.");
+            }
+        });
+    }
+
+    private java.util.Set<UUID> contacts(UUID utilisateurId) {
+        return utilisateurId == null ? java.util.Set.of() : relations.contactsEtablis(utilisateurId);
+    }
+
 
     public TalentRechercheResponse trouverParId(UUID id) {
         Citoyen citoyen = citoyenRepository.findById(id)
@@ -204,7 +300,11 @@ public class TalentRechercheService {
         };
     }
 
-    private TalentRechercheResponse toResponse(Citoyen citoyen) {
+        private TalentRechercheResponse toResponse(Citoyen citoyen) {
+        return toResponse(citoyen, java.util.Set.of());
+    }
+
+    private TalentRechercheResponse toResponse(Citoyen citoyen, java.util.Set<UUID> contacts) {
         List<CitoyenCompetence> links =
                 citoyenCompetenceRepository.findByCitoyenId(citoyen.getId());
         List<TalentCompetenceResponse> skills = links.stream()
@@ -248,8 +348,11 @@ public class TalentRechercheService {
                 commune == null ? null : commune.getNom(),
                 metierIds,
                 nbValidations,
-                nbPreuves,
-                aPortfolio
+                                nbPreuves,
+                aPortfolio,
+                contacts.contains(citoyen.getId()),
+                contacts.contains(citoyen.getId()) ? citoyen.getPrenom() + " " + citoyen.getNom() : null,
+                contacts.contains(citoyen.getId()) ? citoyen.getPhotoUrl() : null
         );
     }
 }

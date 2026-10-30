@@ -41,7 +41,7 @@ class CitoyenValidationServiceTest {
         var page = service.listerPourCitoyen(citoyenId, null, 0, 20);
 
         assertEquals(1, page.getTotalElements());
-        CitoyenValidationResponse response = page.getContent().getFirst();
+        CitoyenValidationResponse response = page.getContent().get(0);
         assertEquals("Menuiserie", response.competenceNom());
         assertEquals(StatutValidation.APPROUVEE, response.statut());
         assertEquals("Évaluateur", response.validateurLabel());

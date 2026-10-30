@@ -28,6 +28,10 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private TypeNotification type; // Adaptez selon votre type d'enum
 
-    @Column(name = "date_creation")
+        @Column(name = "date_creation")
     private LocalDateTime dateCreation;
+
+    /** Objet concerné (demande de mise en relation, validation...) : l'application l'ouvre directement. */
+    @Column(name = "reference_id")
+    private UUID referenceId;
 }

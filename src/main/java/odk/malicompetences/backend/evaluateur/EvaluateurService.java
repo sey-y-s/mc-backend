@@ -47,6 +47,23 @@ public class EvaluateurService {
  private EvaluateurHabilitationRepository habilitations;
  private odk.malicompetences.backend.competence.CompetenceRepository competences;
 
+   private odk.malicompetences.backend.notification.NotificationService notifications;
+
+ @org.springframework.beans.factory.annotation.Autowired
+ void setNotifications(odk.malicompetences.backend.notification.NotificationService notifications) {
+  this.notifications = notifications;
+ }
+
+ private odk.malicompetences.backend.portfolio.PortfolioRealisationRepository portfolios;
+ private odk.malicompetences.backend.portfolio.PortfolioRealisationMapper portfolioMapper;
+
+ @org.springframework.beans.factory.annotation.Autowired
+ void setPortfolio(odk.malicompetences.backend.portfolio.PortfolioRealisationRepository portfolios,
+                   odk.malicompetences.backend.portfolio.PortfolioRealisationMapper portfolioMapper) {
+  this.portfolios = portfolios;
+  this.portfolioMapper = portfolioMapper;
+ }
+
  @org.springframework.beans.factory.annotation.Autowired
  void setControles(odk.malicompetences.backend.centre.HabilitationService habilitation,
                    EvaluateurHabilitationRepository habilitations,
@@ -105,13 +122,21 @@ public class EvaluateurService {
   EvaluateurCentre evaluation = assignments.findByCitoyenIdAndCentreId(request.citoyenId(), request.centreId())
           .orElseGet(EvaluateurCentre::new);
 
+  // Notifié seulement pour une vraie nouvelle désignation (ou une réactivation), pas à chaque mise à jour.
+  boolean nouvelleDesignation = evaluation.getId() == null || !evaluation.isActif();
   evaluation.setCitoyen(citoyen);
   evaluation.setCentre(centre);
   evaluation.setDesignePar(admin);
   evaluation.setActif(true);
   evaluation.setSpecialite(request.specialite());
-
-  return EvaluateurCentreResponse.from(assignments.save(evaluation));
+  EvaluateurCentre enregistre = assignments.save(evaluation);
+  if (nouvelleDesignation && notifications != null) {
+   notifications.creerEtEnvoyerNotification(new odk.malicompetences.backend.notification.NotificationRequest(
+           "Vous êtes évaluateur",
+           "Le centre « " + centre.getNom() + " » vous a désigné évaluateur. Retrouvez vos demandes dans « Espace évaluateur ».",
+           odk.malicompetences.backend.notification.TypeNotification.SYSTEME, List.of(citoyen.getId())));
+  }
+  return EvaluateurCentreResponse.from(enregistre);
  }
 
  public EvaluateurDemandeResponse creerDemande(ValidationRequest request, String userId) {
@@ -130,6 +155,10 @@ public class EvaluateurService {
 
   if (request.type() == null) {
    throw new IllegalArgumentException("Le type d'évaluation est obligatoire.");
+  }
+  // Validation documentaire : pas de centre, c'est un administrateur qui examine la pièce jointe.
+  if (request.type() == TypeValidation.DIPLOME_VERIFIE) {
+   return creerDemandeDocumentaire(request, competence, citizenId);
   }
   // Une demande auprès d'un centre : évaluation pratique, sur portfolio, ou par un maître artisan référent.
   odk.malicompetences.backend.parcours.ModaliteValidation modalite = switch (request.type()) {
@@ -169,11 +198,75 @@ public class EvaluateurService {
           .orElseThrow(() -> new IllegalArgumentException("Ce centre n'a pas d'évaluateur habilité disponible pour cette compétence."));
 
   // Le validateur associé à la demande est l'évaluateur du centre, pas le citoyen demandeur.
-  ValidationResponse created = validationService.creerValidation(request, evaluateur.getCitoyen().getId().toString());
+    ValidationResponse created = validationService.creerValidation(request, evaluateur.getCitoyen().getId().toString());
+  // Tous les évaluateurs habilités du centre sont prévenus : n'importe lequel peut traiter la demande.
+  if (notifications != null) {
+   List<UUID> aPrevenir = assignments.findByCentreIdAndActifTrue(request.centreId()).stream()
+           .filter(e -> !e.getCitoyen().getId().equals(citizenId))
+           .filter(e -> habilitation.evaluateurHabilite(e, competence.getCompetence()))
+           .filter(e -> modalite != odk.malicompetences.backend.parcours.ModaliteValidation.MAITRE_ARTISAN
+                   || (e.getSpecialite() != null && !e.getSpecialite().isBlank()))
+           .map(e -> e.getCitoyen().getId())
+           .toList();
+   if (!aPrevenir.isEmpty()) {
+    notifications.creerEtEnvoyerNotification(new odk.malicompetences.backend.notification.NotificationRequest(
+            "Nouvelle demande d'évaluation",
+            "Une demande d'évaluation (" + modalite.libelle() + ") attend votre décision pour la compétence « "
+                    + competence.getCompetence().getNom() + " ». Ouvrez votre espace évaluateur.",
+            odk.malicompetences.backend.notification.TypeNotification.VALIDATION, aPrevenir));
+   }
+  }
+
 
   Validation entity = validations.findById(created.id())
           .orElseThrow(() -> new ResourceNotFoundException("Demande créée introuvable"));
 
+  return EvaluateurDemandeResponse.from(entity);
+ }
+
+ /**
+  * La validation documentaire n'est liée à aucun centre : l'administrateur examine la pièce jointe
+  * (diplôme, certificat, attestation…) et l'approuve ou la refuse. L'affectation de cet examen à un centre
+  * ou à un maître artisan est une évolution prévue.
+  */
+ private EvaluateurDemandeResponse creerDemandeDocumentaire(
+         ValidationRequest request,
+         odk.malicompetences.backend.competence.CitoyenCompetence competence,
+         UUID citizenId) {
+  var modalite = odk.malicompetences.backend.parcours.ModaliteValidation.DOCUMENTAIRE;
+  if (!parcoursValidationService.modaliteAutorisee(competence, modalite)) {
+   throw new IllegalStateException("La validation documentaire n'est pas autorisée pour cette compétence.");
+  }
+  parcoursValidationService.verifierModaliteImposee(competence, modalite);
+  if (request.preuveId() == null) {
+   throw new IllegalArgumentException("Joignez d'abord un justificatif (diplôme, certificat, attestation…).");
+  }
+  if (validations.existsByCitoyenCompetenceIdAndStatut(request.citoyenCompetenceId(), StatutValidation.EN_ATTENTE)) {
+   throw new IllegalStateException("Une demande est déjà en cours d'examen pour cette compétence.");
+  }
+  Utilisateur examinateur = utilisateurs.findAll().stream()
+          .filter(Utilisateur::isActif)
+          .filter(u -> u.getRole() == Role.SUPER_ADMIN || u.getRole() == Role.ADMIN)
+          .findFirst()
+          .orElseThrow(() -> new IllegalStateException("Aucun administrateur n'est disponible pour examiner votre justificatif."));
+  ValidationRequest sansCentre = new ValidationRequest(request.citoyenCompetenceId(), request.preuveId(), null,
+          TypeValidation.DIPLOME_VERIFIE, request.commentaire(), request.dateExpiration());
+  ValidationResponse created = validationService.creerValidation(sansCentre, examinateur.getId().toString());
+    Validation entity = validations.findById(created.id())
+          .orElseThrow(() -> new ResourceNotFoundException("Demande créée introuvable"));
+  // Les administrateurs sont prévenus : un justificatif attend leur examen.
+  List<UUID> admins = utilisateurs.findAll().stream()
+          .filter(Utilisateur::isActif)
+          .filter(u -> u.getRole() == Role.SUPER_ADMIN || u.getRole() == Role.ADMIN)
+          .map(Utilisateur::getId)
+          .toList();
+  if (notifications != null && !admins.isEmpty()) {
+   notifications.creerEtEnvoyerNotification(new odk.malicompetences.backend.notification.NotificationRequest(
+           "Justificatif à examiner",
+           "Un citoyen a envoyé un justificatif pour la compétence « "
+                   + competence.getCompetence().getNom() + " ». Ouvrez les validations pour l'examiner.",
+           odk.malicompetences.backend.notification.TypeNotification.VALIDATION, admins));
+  }
   return EvaluateurDemandeResponse.from(entity);
  }
 
@@ -260,11 +353,47 @@ public class EvaluateurService {
           .collect(Collectors.toSet());
 
   return centreIds.stream()
-          .flatMap(centreId -> validations.findByCentreIdAndStatut(centreId, StatutValidation.EN_ATTENTE).stream())
+                    .flatMap(centreId -> validations.findByCentreIdAndStatut(centreId, StatutValidation.EN_ATTENTE).stream())
+          .filter(v -> !v.getCitoyenCompetence().getCitoyen().getId().equals(parseId(userId)))
           .distinct()
           .sorted(Comparator.comparing(Validation::getDateDemande).reversed())
           .map(EvaluateurDemandeResponse::from)
           .toList();
+ }
+
+  /** Décisions déjà rendues par les centres de l'évaluateur, les plus récentes d'abord. */
+ @Transactional(readOnly = true)
+ public List<EvaluateurDemandeResponse> historique(String userId) {
+  Set<UUID> centreIds = assignments.findByCitoyenIdAndActifTrue(parseId(userId)).stream()
+          .map(e -> e.getCentre().getId())
+          .collect(Collectors.toSet());
+
+  return centreIds.stream()
+                    .flatMap(centreId -> validations.findByCentreIdAndStatutNot(centreId, StatutValidation.EN_ATTENTE).stream())
+          .filter(v -> !v.getCitoyenCompetence().getCitoyen().getId().equals(parseId(userId)))
+          .distinct()
+          .sorted(Comparator.comparing(Validation::getDateDemande).reversed())
+          .map(EvaluateurDemandeResponse::from)
+          .toList();
+ }
+
+ /**
+  * Réalisations du citoyen, pour une évaluation sur portfolio : seul un évaluateur actif du centre qui a reçu
+  * la demande peut les consulter, et seulement tant que l'on évalue son portfolio.
+  */
+ @Transactional(readOnly = true)
+ public List<odk.malicompetences.backend.portfolio.PortfolioRealisationResponse> portfolioDeLaDemande(UUID validationId, String userId) {
+  UUID id = parseId(userId);
+  Validation v = validations.findById(validationId)
+          .orElseThrow(() -> new ResourceNotFoundException("Demande de validation introuvable"));
+  if (v.getCentre() == null || !assignments.existsByCitoyenIdAndCentreIdAndActifTrue(id, v.getCentre().getId())) {
+   throw new AccessDeniedException("Vous n'êtes pas évaluateur actif dans le centre concerné.");
+  }
+  if (v.getType() != TypeValidation.PORTFOLIO_MEDIA) {
+   throw new AccessDeniedException("Le portfolio n'est consultable que pour une évaluation sur portfolio.");
+  }
+  UUID citoyenId = v.getCitoyenCompetence().getCitoyen().getId();
+  return portfolios.findByCitoyenId(citoyenId).stream().map(portfolioMapper::toResponse).toList();
  }
 
  public ValidationResponse decider(UUID validationId, StatutValidation statut, String commentaire, String userId) {

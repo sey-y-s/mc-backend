@@ -28,6 +28,10 @@ public class TestNumeriqueService {
     private final CitoyenCompetenceRepository citoyenCompetenceRepository;
     private final PreuveRepository preuveRepository;
     private final odk.malicompetences.backend.parcours.ReglesModaliteService reglesModalite;
+    private final odk.malicompetences.backend.parcours.ParcoursValidationService parcoursValidation;
+    private final odk.malicompetences.backend.validation.ValidationService validationService;
+    private final odk.malicompetences.backend.utilisateur.UtilisateurRepository utilisateurs;
+    private final odk.malicompetences.backend.notification.NotificationService notifications;
 
     public TestNumeriqueService(TestNumeriqueRepository testRepository,
                                 QuestionRepository questionRepository,
@@ -36,7 +40,11 @@ public class TestNumeriqueService {
                                 CitoyenRepository citoyenRepository,
                                 CitoyenCompetenceRepository citoyenCompetenceRepository,
                                 PreuveRepository preuveRepository,
-                                odk.malicompetences.backend.parcours.ReglesModaliteService reglesModalite) {
+                                odk.malicompetences.backend.parcours.ReglesModaliteService reglesModalite,
+                                odk.malicompetences.backend.parcours.ParcoursValidationService parcoursValidation,
+                                odk.malicompetences.backend.validation.ValidationService validationService,
+                                odk.malicompetences.backend.utilisateur.UtilisateurRepository utilisateurs,
+                                odk.malicompetences.backend.notification.NotificationService notifications) {
         this.testRepository = testRepository;
         this.questionRepository = questionRepository;
         this.propositionRepository = propositionRepository;
@@ -45,6 +53,10 @@ public class TestNumeriqueService {
         this.citoyenCompetenceRepository = citoyenCompetenceRepository;
         this.preuveRepository = preuveRepository;
         this.reglesModalite = reglesModalite;
+        this.parcoursValidation = parcoursValidation;
+        this.validationService = validationService;
+        this.utilisateurs = utilisateurs;
+        this.notifications = notifications;
     }
 
     @Transactional(readOnly = true)
@@ -140,6 +152,48 @@ public class TestNumeriqueService {
         resultat.setReussi(reussi);
         resultat.setDatePassage(LocalDateTime.now());
         resultat.setPreuve(preuve);
-        return resultatRepository.save(resultat);
+        ResultatTest enregistre = resultatRepository.save(resultat);
+        if (reussi) {
+            enregistre.setCompetenceValidee(validerParLeTest(competence, preuve, score, test));
+        }
+        return enregistre;
+    }
+
+    /**
+     * Un test réussi valide la compétence quand c'est la démarche du parcours du citoyen (modalité « test
+     * numérique » recommandée pour cette compétence). Sinon il reste une simple preuve : le parcours est imposé
+     * et un test ne contourne pas la modalité prévue (ex. validation documentaire).
+     * La décision est enregistrée comme les autres, au nom d'un administrateur de la plateforme.
+     */
+    private boolean validerParLeTest(CitoyenCompetence competence, Preuve preuve, BigDecimal score, TestNumerique test) {
+        if (competence.getEtat() == odk.malicompetences.backend.competence.EtatCompetence.VALIDEE || preuve == null) {
+            return false;
+        }
+        var parcours = parcoursValidation.proposer(competence.getId(), competence.getCitoyen().getId());
+        if (parcours.recommandee() != odk.malicompetences.backend.parcours.ModaliteValidation.TEST_NUMERIQUE) {
+            return false;
+        }
+        var decideur = utilisateurs.findAll().stream()
+                .filter(odk.malicompetences.backend.utilisateur.Utilisateur::isActif)
+                .filter(u -> u.getRole() == odk.malicompetences.backend.utilisateur.Role.SUPER_ADMIN
+                        || u.getRole() == odk.malicompetences.backend.utilisateur.Role.ADMIN)
+                .findFirst()
+                .orElse(null);
+        if (decideur == null) {
+            return false; // la preuve reste jointe : la validation se fera à l'examen d'un administrateur
+        }
+        String commentaire = "Test numérique réussi : " + test.getTitre() + " (" + score + " %).";
+        var demande = new odk.malicompetences.backend.validation.ValidationRequest(
+                competence.getId(), preuve.getId(), null,
+                odk.malicompetences.backend.validation.TypeValidation.TEST_NUMERIQUE, commentaire, null);
+        var creee = validationService.creerValidation(demande, decideur.getId().toString());
+        validationService.decider(creee.id(), odk.malicompetences.backend.validation.StatutValidation.APPROUVEE,
+                commentaire, null, decideur.getId());
+        notifications.creerEtEnvoyerNotification(new odk.malicompetences.backend.notification.NotificationRequest(
+                "Compétence validée",
+                "Votre test numérique est réussi : la compétence « " + competence.getCompetence().getNom() + " » est validée.",
+                odk.malicompetences.backend.notification.TypeNotification.VALIDATION,
+                List.of(competence.getCitoyen().getId())));
+        return true;
     }
 }

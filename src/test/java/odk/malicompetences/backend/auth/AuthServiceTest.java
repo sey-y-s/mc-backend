@@ -1,6 +1,5 @@
 package odk.malicompetences.backend.auth;
 
-import odk.malicompetences.backend.citoyen.Citoyen;
 import odk.malicompetences.backend.citoyen.CitoyenRepository;
 import odk.malicompetences.backend.citoyen.Sexe;
 import odk.malicompetences.backend.common.security.JwtService;
@@ -14,106 +13,112 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
+/**
+ * L'ancien AuthService a été découpé : ce test couvre maintenant l'inscription
+ * ({@link InscriptionService}), le mot de passe oublié ({@link ReinitialisationMotDePasseService})
+ * et la connexion ({@link AuthService}).
+ */
 class AuthServiceTest {
 
     private UtilisateurRepository utilisateurRepository;
     private CitoyenRepository citoyenRepository;
     private OrganisationRepository organisationRepository;
-    private CommuneRepository communeRepository;
     private PasswordEncoder passwordEncoder;
     private JwtService jwtService;
     private ResetPasswordTokenRepository resetTokenRepository;
     private CodeSender codeSender;
-    private AuthService service;
+
+    private InscriptionService inscription;
+    private ReinitialisationMotDePasseService reinitialisation;
+    private AuthService auth;
 
     @BeforeEach
     void setUp() {
         utilisateurRepository = mock(UtilisateurRepository.class);
         citoyenRepository = mock(CitoyenRepository.class);
         organisationRepository = mock(OrganisationRepository.class);
-        communeRepository = mock(CommuneRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
         jwtService = mock(JwtService.class);
         resetTokenRepository = mock(ResetPasswordTokenRepository.class);
         codeSender = mock(CodeSender.class);
-        service = new AuthService(utilisateurRepository, citoyenRepository, organisationRepository,
-                communeRepository, passwordEncoder, jwtService, resetTokenRepository, codeSender);
+        VerificationService verificationService = mock(VerificationService.class);
+
+        inscription = new InscriptionService(utilisateurRepository, passwordEncoder, verificationService, List.of(
+                new ProfilCitoyenInitialiseur(citoyenRepository, mock(CommuneRepository.class))));
+        reinitialisation = new ReinitialisationMotDePasseService(
+                utilisateurRepository, resetTokenRepository, passwordEncoder, codeSender, verificationService);
+        auth = new AuthService(utilisateurRepository, passwordEncoder, jwtService);
 
         when(utilisateurRepository.existsByTelephone(any())).thenReturn(false);
         when(utilisateurRepository.existsByEmail(any())).thenReturn(false);
         when(passwordEncoder.encode("motdepasse123")).thenReturn("hash-bcrypt");
         when(utilisateurRepository.save(any(Utilisateur.class))).thenAnswer(invocation -> {
             Utilisateur utilisateur = invocation.getArgument(0);
-            utilisateur.setId(UUID.randomUUID());
+            if (utilisateur.getId() == null) utilisateur.setId(UUID.randomUUID());
             return utilisateur;
         });
     }
 
-    @Test
-    void inscriptionCitoyenCreeLeCompteEtLePasseport() {
-        RegisterRequest request = new RegisterRequest(
-                " 70000000 ", "TEST@EXAMPLE.COM", "motdepasse123", Role.CITOYEN,
-                "Diallo", "Awa", Sexe.FEMME, null, null, null, null, null, true
-        );
-
-        service.inscrire(request);
-
-        var captor = org.mockito.ArgumentCaptor.forClass(Citoyen.class);
-        verify(citoyenRepository).save(captor.capture());
-        Citoyen citoyen = captor.getValue();
-        assertNotNull(citoyen.getId());
-        assertEquals(citoyen.getUtilisateur().getId(), citoyen.getId());
-        assertEquals("Diallo", citoyen.getNom());
-        assertEquals(Sexe.FEMME, citoyen.getSexe());
-        assertTrue(citoyen.getCodePasseport().matches("MC-\\d{4}-[A-F0-9]{6}"));
-        assertEquals("70000000", citoyen.getUtilisateur().getTelephone());
-        assertEquals("test@example.com", citoyen.getUtilisateur().getEmail());
-        assertEquals("hash-bcrypt", citoyen.getUtilisateur().getPasswordHash());
-        verifyNoInteractions(organisationRepository);
-    }
+    // ------------------------------------------------------------------ inscription
 
     @Test
     void inscriptionCitoyenSansNomEstRefuseeAvantCreationDuCompte() {
         RegisterRequest request = new RegisterRequest(
                 "70000000", null, "motdepasse123", Role.CITOYEN,
-                " ", "Awa", null, null, null, null, null, null, true
+                " ", "Awa", Sexe.FEMME, null, UUID.randomUUID(), null, null, null, true
         );
 
-        assertThrows(IllegalArgumentException.class, () -> service.inscrire(request));
+        assertThrows(IllegalArgumentException.class, () -> inscription.inscrire(request));
         verify(utilisateurRepository, never()).save(any(Utilisateur.class));
         verifyNoInteractions(citoyenRepository, organisationRepository);
     }
 
     @Test
-    void inscriptionOrganisationCreeUnProfilEnAttente() {
+    void inscriptionSansAcceptationDesConditionsEstRefusee() {
         RegisterRequest request = new RegisterRequest(
-                "76000000", null, "motdepasse123", Role.ORGANISATION,
-                null, null, null, null, null, "Atelier Sugu", "Atelier local", null, true
+                "70000000", null, "motdepasse123", Role.CITOYEN,
+                "Diallo", "Awa", Sexe.FEMME, null, UUID.randomUUID(), null, null, null, false
         );
 
-        service.inscrire(request);
-
-        var captor = org.mockito.ArgumentCaptor.forClass(odk.malicompetences.backend.organisation.Organisation.class);
-        verify(organisationRepository).save(captor.capture());
-        assertEquals("Atelier Sugu", captor.getValue().getNom());
-        assertEquals(odk.malicompetences.backend.organisation.StatutOrganisation.EN_ATTENTE,
-                captor.getValue().getStatut());
-        verifyNoInteractions(citoyenRepository);
+        assertThrows(IllegalArgumentException.class, () -> inscription.inscrire(request));
+        verify(utilisateurRepository, never()).save(any(Utilisateur.class));
     }
+
+    @Test
+    void inscriptionPubliqueRefuseUnRoleReserve() {
+        RegisterRequest request = new RegisterRequest(
+                "70000000", null, "motdepasse123", Role.ADMIN,
+                null, null, null, null, null, null, null, null, true
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> inscription.inscrire(request));
+        verify(utilisateurRepository, never()).save(any(Utilisateur.class));
+    }
+
+    // ------------------------------------------------------------------ mot de passe oublié
 
     @Test
     void motDePasseOublieSansCompteNeRevelePasQueLeCompteNexistePas() {
         when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.empty());
         when(utilisateurRepository.findByEmail(any())).thenReturn(Optional.empty());
 
-        service.demanderReinitialisation(new ForgotPasswordRequest("70000000"));
+        reinitialisation.demander(new ForgotPasswordRequest("70000000"));
 
         verifyNoInteractions(codeSender);
         verifyNoInteractions(resetTokenRepository);
@@ -121,12 +126,11 @@ class AuthServiceTest {
 
     @Test
     void motDePasseOublieEnvoieUnCodeASixChiffres() {
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setId(UUID.randomUUID());
-        utilisateur.setTelephone("70000000");
+        Utilisateur utilisateur = compte();
         when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.of(utilisateur));
+        when(passwordEncoder.encode(matches("\\d{6}"))).thenReturn("hash-du-code");
 
-        service.demanderReinitialisation(new ForgotPasswordRequest("70000000"));
+        reinitialisation.demander(new ForgotPasswordRequest("70000000"));
 
         verify(resetTokenRepository).invaliderTous(utilisateur.getId());
         verify(codeSender).envoyer(eq(utilisateur), matches("\\d{6}"));
@@ -134,9 +138,7 @@ class AuthServiceTest {
 
     @Test
     void codeFauxIncrementeLesTentativesEtEstRefuse() {
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setId(UUID.randomUUID());
-        utilisateur.setTelephone("70000000");
+        Utilisateur utilisateur = compte();
         when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.of(utilisateur));
         ResetPasswordToken jeton = new ResetPasswordToken();
         jeton.setCodeHash("hash-du-code");
@@ -145,10 +147,42 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(jeton));
         when(passwordEncoder.matches("000000", "hash-du-code")).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class, () -> service.reinitialiser(
+        assertThrows(IllegalArgumentException.class, () -> reinitialisation.reinitialiser(
                 new ResetPasswordRequest("70000000", "000000", "nouveau-mdp-123")));
 
         assertEquals(1, jeton.getTentatives());
         assertFalse(jeton.isUtilise());
+    }
+
+    // ------------------------------------------------------------------ connexion
+
+    @Test
+    void connexionAvecMauvaisMotDePasseEstRefusee() {
+        Utilisateur utilisateur = compte();
+        utilisateur.setPasswordHash("hash-bcrypt");
+        when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.of(utilisateur));
+        when(passwordEncoder.matches("mauvais", "hash-bcrypt")).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> auth.login(new LoginRequest("70000000", "mauvais")));
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    void connexionDunCompteNonVerifieOuvreLEcranDuCode() {
+        Utilisateur utilisateur = compte();
+        utilisateur.setPasswordHash("hash-bcrypt");
+        when(utilisateurRepository.findByTelephone(any())).thenReturn(Optional.of(utilisateur));
+        when(passwordEncoder.matches("motdepasse123", "hash-bcrypt")).thenReturn(true);
+
+        assertThrows(CompteNonVerifieException.class, () -> auth.login(new LoginRequest("70000000", "motdepasse123")));
+        verifyNoInteractions(jwtService);
+    }
+
+    private static Utilisateur compte() {
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setId(UUID.randomUUID());
+        utilisateur.setTelephone("70000000");
+        utilisateur.setActif(true);
+        return utilisateur;
     }
 }

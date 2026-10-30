@@ -22,6 +22,10 @@ public record TalentRechercheResponse(
         List<UUID> metierIds,
         int nbValidations,
         int nbPreuves,
-        boolean aPortfolio
+                boolean aPortfolio,
+        /** Vrai si une mise en relation acceptée existe avec la personne qui regarde : le profil n'est plus anonyme. */
+        boolean enRelation,
+        String nomComplet,
+        String photoUrl
 ) {
 }

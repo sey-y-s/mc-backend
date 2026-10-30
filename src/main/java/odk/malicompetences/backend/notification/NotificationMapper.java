@@ -16,7 +16,8 @@ public class NotificationMapper {
         notification.setTitre(request.titre());
         notification.setMessage(request.message());
         notification.setType(request.type());
-        notification.setDateCreation(LocalDateTime.now());
+                notification.setDateCreation(LocalDateTime.now());
+        notification.setReferenceId(request.referenceId());
         return notification;
     }
 
@@ -46,7 +47,8 @@ public class NotificationMapper {
                 nd.getLu(),
                 nd.getDateReception(),
                 nd.getDateLecture(),
-                n.getDateCreation()
+                                n.getDateCreation(),
+                n.getReferenceId()
         );
     }
 }

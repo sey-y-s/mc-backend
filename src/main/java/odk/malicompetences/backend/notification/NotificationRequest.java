@@ -19,5 +19,12 @@ public record NotificationRequest(
         TypeNotification type,
 
         @NotNull(message = "La liste des IDs des destinataires est obligatoire")
-        List<UUID> destinatairesIds
-) {}
+                List<UUID> destinatairesIds,
+
+        /** Facultatif : identifiant de l'objet que l'alerte concerne. */
+        UUID referenceId
+) {
+    public NotificationRequest(String titre, String message, TypeNotification type, List<UUID> destinatairesIds) {
+        this(titre, message, type, destinatairesIds, null);
+    }
+}

@@ -34,20 +34,23 @@ public class CandidatureService {
     private final CitoyenRepository citoyenRepository;
     private final CitoyenCompetenceRepository citoyenCompetenceRepository;
     private final NotificationService notificationService;
-    private final OpportuniteMapper mapper;
+        private final OpportuniteMapper mapper;
+    private final odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletude;
 
     public CandidatureService(OpportuniteRepository opportuniteRepository,
                               CandidatureOpportuniteRepository candidatureRepository,
                               CitoyenRepository citoyenRepository,
                               CitoyenCompetenceRepository citoyenCompetenceRepository,
-                              NotificationService notificationService,
-                              OpportuniteMapper mapper) {
+                                                            NotificationService notificationService,
+                              OpportuniteMapper mapper,
+                              odk.malicompetences.backend.citoyen.ProfilCompletudeService profilCompletude) {
         this.opportuniteRepository = opportuniteRepository;
         this.candidatureRepository = candidatureRepository;
         this.citoyenRepository = citoyenRepository;
         this.citoyenCompetenceRepository = citoyenCompetenceRepository;
         this.notificationService = notificationService;
-        this.mapper = mapper;
+                this.mapper = mapper;
+        this.profilCompletude = profilCompletude;
     }
 
     // ----- Proximité -----
@@ -97,6 +100,10 @@ public class CandidatureService {
                 .orElseThrow(() -> new ResourceNotFoundException("Opportunité introuvable ou close."));
         Citoyen c = citoyenRepository.findById(citoyenId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profil citoyen introuvable."));
+                // Un profil incomplet ne peut rien faire vis-à-vis des autres : il commence par compléter son passeport.
+        if (!profilCompletude.estVisible(c)) {
+            throw new IllegalStateException("Complétez votre passeport (photo, commune, compétence avec preuve) pour postuler.");
+        }
         if (candidatureRepository.existsByOpportuniteIdAndCitoyenId(opportuniteId, citoyenId)) {
             throw new IllegalStateException("Vous avez déjà postulé à cette opportunité.");
         }

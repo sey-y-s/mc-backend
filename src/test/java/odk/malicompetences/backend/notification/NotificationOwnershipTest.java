@@ -20,12 +20,13 @@ class NotificationOwnershipTest {
         UUID linkId = UUID.randomUUID();
         NotificationDestinataire link = link(userId, false);
         when(liens.findByIdAndUtilisateurId(linkId, userId)).thenReturn(Optional.of(link));
+        when(liens.save(link)).thenReturn(link);
         NotificationService service = service(liens);
 
         NotificationResponse response = service.marquerCommeLue(linkId, userId, false);
 
         assertTrue(response.lu());
-        assertEquals(linkId, response.destinataireId());
+        assertEquals(link.getId(), response.destinataireId());
         assertNotNull(response.dateLecture());
         verify(liens).save(link);
         verify(liens, never()).findById(linkId);

@@ -43,13 +43,20 @@ public class DemandeMiseEnRelationMapper {
         }
     }
 
-    public DemandeMiseEnRelationResponse toResponse(DemandeMiseEnRelation demande) {
+        public DemandeMiseEnRelationResponse toResponse(DemandeMiseEnRelation demande) {
+        return toResponse(demande, null);
+    }
+
+    /**
+     * Vue d'un participant : une fois la demande acceptée, il reçoit les coordonnées de l'autre personne
+     * (jamais avant, et jamais un tiers).
+     */
+    public DemandeMiseEnRelationResponse toResponse(DemandeMiseEnRelation demande, UUID viewerId) {
         if (demande == null) {
             return null;
         }
-
         UUID demandeurId = demande.getDemandeur() != null ? demande.getDemandeur().getId() : null;
-        String demandeurNomComplet = demande.getDemandeur() != null ? demande.getDemandeur().getEmail() : null;
+        String demandeurNomComplet = nomDuDemandeur(demande.getDemandeur());
 
         UUID destinataireId = demande.getDestinataire() != null ? demande.getDestinataire().getId() : null;
         String destinataireNomComplet = demande.getDestinataire() != null ? demande.getDestinataire().getPrenom() + " " + demande.getDestinataire().getNom() : null;
@@ -65,8 +72,36 @@ public class DemandeMiseEnRelationMapper {
                 suiviId,
                 demande.getStatut(),
                 demande.getMessage(),
-                demande.getDateDemande(),
-                demande.getDateReponse()
+                                demande.getDateDemande(),
+                demande.getDateReponse(),
+                contactPour(demande, viewerId)
         );
+    }
+
+    private static String nomDuDemandeur(Utilisateur demandeur) {
+        if (demandeur == null) return null;
+        if (demandeur.getCitoyen() != null) {
+            return demandeur.getCitoyen().getPrenom() + " " + demandeur.getCitoyen().getNom();
+        }
+        if (demandeur.getOrganisation() != null) {
+            return demandeur.getOrganisation().getNom();
+        }
+        return demandeur.getEmail();
+    }
+
+    private static DemandeMiseEnRelationResponse.Contact contactPour(DemandeMiseEnRelation demande, UUID viewerId) {
+        if (viewerId == null || demande.getStatut() != StatutContact.ACCEPTEE
+                || demande.getDemandeur() == null || demande.getDestinataire() == null) {
+            return null;
+        }
+        Utilisateur autre;
+        if (viewerId.equals(demande.getDemandeur().getId())) {
+            autre = demande.getDestinataire().getUtilisateur();
+        } else if (viewerId.equals(demande.getDestinataire().getId())) {
+            autre = demande.getDemandeur();
+        } else {
+            return null;
+        }
+        return autre == null ? null : new DemandeMiseEnRelationResponse.Contact(autre.getTelephone(), autre.getEmail());
     }
 }

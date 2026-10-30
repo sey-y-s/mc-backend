@@ -43,6 +43,17 @@ public class EvaluateurController {
         return service.demandes(a.getName());
     }
 
+        @GetMapping("/historique")
+    public List<EvaluateurDemandeResponse> historique(Authentication a) {
+        return service.historique(a.getName());
+    }
+
+    @GetMapping("/demandes/{id}/portfolio")
+    public List<odk.malicompetences.backend.portfolio.PortfolioRealisationResponse> portfolio(
+            @PathVariable UUID id, Authentication a) {
+        return service.portfolioDeLaDemande(id, a.getName());
+    }
+
     @PatchMapping("/demandes/{id}/decision")
     public ValidationResponse decider(@PathVariable UUID id, @Valid @RequestBody ValidationStatutRequest r, Authentication a) {
         return service.decider(id, r.statut(), r.commentaire(), r.niveauValide(), a.getName());
